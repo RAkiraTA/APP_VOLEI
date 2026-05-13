@@ -1,0 +1,2691 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Vôlei Manager</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Nunito:wght@400;600;700;900&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --surface: #111827;
+    --surface2: #1a2338;
+    --border: #1e2d4a;
+    --accent: #f59e0b;
+    --accent2: #ef4444;
+    --accent3: #10b981;
+    --text: #f1f5f9;
+    --muted: #64748b;
+    --blue: #3b82f6;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: 'Nunito', sans-serif; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+  /* HEADER */
+  header {
+    background: linear-gradient(135deg, #0f1a2e 0%, #1a2d4a 100%);
+    border-bottom: 3px solid var(--accent);
+    padding: 12px 20px;
+    display: flex; align-items: center; gap: 12px;
+    flex-shrink: 0; z-index: 100;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.5);
+  }
+  .logo { font-family: 'Bebas Neue', sans-serif; font-size: 26px; color: var(--accent); letter-spacing: 2px; }
+  .logo span { color: #fff; }
+  .header-sub { font-size: 11px; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+
+  /* LAYOUT */
+  .app-wrapper { display: flex; flex: 1; overflow: hidden; }
+
+  /* SIDEBAR — desktop padrão */
+  .sidebar {
+    width: 185px; flex-shrink: 0;
+    background: var(--surface); border-right: 1px solid var(--border);
+    padding: 12px 8px; overflow-y: auto; display: flex; flex-direction: column; gap: 3px;
+    transition: width 0.2s;
+  }
+  .sidebar::-webkit-scrollbar { width: 3px; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 2px; }
+
+  .nav-btn {
+    padding: 10px 12px; border-radius: 8px; border: none;
+    font-family: 'Nunito', sans-serif; font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: all 0.2s;
+    background: transparent; color: var(--muted);
+    display: flex; align-items: center; gap: 8px; width: 100%; text-align: left;
+  }
+  .nav-btn.active { background: var(--accent); color: #000; }
+  .nav-btn:hover:not(.active) { background: var(--border); color: var(--text); }
+  .nav-icon { font-size: 16px; flex-shrink: 0; }
+  .nav-label { flex: 1; }
+  .nav-divider { border: none; border-top: 1px solid var(--border); margin: 6px 4px; }
+
+  /* MAIN */
+  main { flex: 1; overflow-y: auto; padding: 20px; }
+  main::-webkit-scrollbar { width: 4px; }
+  main::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* ─── NOTEBOOK / DESKTOP GRANDE (≥ 1100px) ─── */
+  @media (min-width: 1100px) {
+    .sidebar { width: 210px; }
+    .nav-btn { font-size: 14px; padding: 11px 14px; }
+    main { padding: 28px 36px; }
+    .section { max-width: 900px; margin: 0 auto; }
+  }
+
+  /* ─── NOTEBOOK MENOR / DESKTOP PADRÃO (800px – 1099px) ─── */
+  @media (min-width: 800px) and (max-width: 1099px) {
+    .sidebar { width: 190px; }
+    .nav-btn { font-size: 13px; }
+    main { padding: 18px 24px; }
+    .section { max-width: 720px; margin: 0 auto; }
+  }
+
+  /* ─── TABLET (641px – 799px): sidebar ícone + texto pequeno ─── */
+  @media (min-width: 641px) and (max-width: 799px) {
+    .sidebar { width: 72px; padding: 10px 4px; }
+    .nav-btn {
+      flex-direction: column; gap: 2px; padding: 8px 4px;
+      font-size: 9px; justify-content: center; align-items: center;
+    }
+    .nav-icon { font-size: 20px; }
+    .nav-label { font-size: 9px; text-align: center; line-height: 1.1; }
+    .nav-divider { margin: 4px 2px; }
+    main { padding: 12px 14px; }
+    .form-row { grid-template-columns: 1fr; }
+    .summary-grid { grid-template-columns: 1fr 1fr; }
+    .placar-score { font-size: 56px !important; }
+    .rank-stats { gap: 8px; }
+  }
+
+  /* ─── CELULAR (≤ 640px): barra inferior fixa ─── */
+  @media (max-width: 640px) {
+    body { overflow: auto; }
+    .app-wrapper { flex-direction: column; overflow: visible; }
+
+    /* Sidebar FIXA na parte inferior — funciona em qualquer orientação */
+    .sidebar {
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      width: 100%; height: auto; min-height: 58px;
+      flex-direction: row; border-right: none;
+      border-top: 2px solid var(--border);
+      padding: 3px 4px; overflow-x: auto; overflow-y: hidden;
+      z-index: 200; background: var(--surface);
+      gap: 1px;
+    }
+    .nav-btn {
+      flex-direction: column; gap: 1px; padding: 5px 8px;
+      font-size: 8.5px; white-space: nowrap; flex-shrink: 0;
+      justify-content: center; align-items: center; min-width: 48px;
+    }
+    .nav-icon { font-size: 19px; }
+    .nav-label { font-size: 8px; line-height: 1.1; }
+    .nav-divider { display: none; }
+
+    /* Main: padding-bottom para não ficar atrás da barra fixa */
+    main { padding: 10px; padding-bottom: 74px; overflow-y: auto; }
+
+    /* Formulários em coluna única */
+    .form-row { grid-template-columns: 1fr !important; }
+
+    /* Cards com padding menor */
+    .card { padding: 14px; }
+
+    /* List items: wrap em telas pequenas */
+    .list-item { flex-wrap: wrap; }
+    .list-item-info { min-width: 0; }
+    .list-item-name { font-size: 14px; }
+
+    /* Summary grid: 2 colunas */
+    .summary-grid { gap: 6px; }
+    .summary-value { font-size: 20px !important; }
+    .summary-label { font-size: 10px; }
+
+    /* Placar responsivo */
+    .placar-score { font-size: 50px !important; }
+    .placar-timer-display { font-size: 36px !important; }
+    .placar-time-nome { font-size: 14px !important; }
+
+    /* Sorteio: times em coluna */
+    .team-display { grid-template-columns: 1fr 1fr !important; gap: 6px; }
+
+    /* Ranking */
+    .rank-stats { gap: 5px; }
+    .rank-stat-num { font-size: 15px !important; }
+    .rank-stat-lbl { font-size: 8px !important; }
+    .rank-pos-num { font-size: 18px !important; width: 24px !important; }
+
+    /* Histórico expandível */
+    .hist-item-header { flex-wrap: wrap; gap: 6px; }
+
+    /* Modal: tela cheia */
+    .modal-overlay { align-items: flex-end; padding: 0; }
+    .modal { border-radius: 16px 16px 0 0; max-width: 100%; }
+    .modal-confirm { border-radius: 16px 16px 0 0; max-width: 100%; }
+  }
+
+  /* ─── TELAS MUITO PEQUENAS (≤ 380px) ─── */
+  @media (max-width: 380px) {
+    .nav-btn { padding: 4px 5px; min-width: 40px; }
+    .nav-icon { font-size: 17px; }
+    .nav-label { font-size: 7.5px; }
+    .summary-value { font-size: 17px !important; }
+    .placar-score { font-size: 42px !important; }
+  }
+  .section { display: none; }
+  .section.active { display: block; }
+
+  /* CARDS */
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 18px; margin-bottom: 14px;
+  }
+  .card-title {
+    font-family: 'Bebas Neue', sans-serif; font-size: 20px;
+    color: var(--accent); letter-spacing: 1px; margin-bottom: 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  /* FORM */
+  .form-group { margin-bottom: 12px; }
+  label { display: block; font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 5px; }
+  input, select, textarea {
+    width: 100%; padding: 10px 14px; border-radius: 8px;
+    border: 1.5px solid var(--border); background: var(--surface2);
+    color: var(--text); font-family: 'Nunito', sans-serif; font-size: 14px;
+    outline: none; transition: border-color 0.2s;
+  }
+  input:focus, select:focus { border-color: var(--accent); }
+  select option { background: var(--surface2); }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* BUTTONS */
+  .btn {
+    padding: 10px 20px; border-radius: 8px; border: none; cursor: pointer;
+    font-family: 'Nunito', sans-serif; font-size: 14px; font-weight: 700;
+    transition: all 0.2s; display: inline-flex; align-items: center; gap: 6px;
+  }
+  .btn-primary { background: var(--accent); color: #000; }
+  .btn-primary:hover { background: #d97706; transform: translateY(-1px); }
+  .btn-danger { background: var(--accent2); color: #fff; }
+  .btn-danger:hover { background: #dc2626; }
+  .btn-success { background: var(--accent3); color: #fff; }
+  .btn-success:hover { background: #059669; }
+  .btn-blue { background: var(--blue); color: #fff; }
+  .btn-blue:hover { background: #2563eb; }
+  .btn-ghost { background: var(--border); color: var(--text); }
+  .btn-ghost:hover { background: var(--surface2); }
+  .btn-sm { padding: 6px 12px; font-size: 12px; }
+  .btn-full { width: 100%; justify-content: center; }
+
+  /* LIST ITEMS */
+  .list-item {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--surface2); border-radius: 10px; padding: 12px 14px;
+    margin-bottom: 8px; border: 1px solid var(--border);
+    animation: fadeIn 0.3s ease;
+  }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .list-item-info { flex: 1; }
+  .list-item-name { font-weight: 700; font-size: 15px; }
+  .list-item-sub { font-size: 12px; color: var(--muted); margin-top: 2px; }
+
+  /* BADGE */
+  .badge {
+    padding: 3px 10px; border-radius: 20px; font-size: 11px;
+    font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+  .badge-green { background: rgba(16,185,129,0.15); color: var(--accent3); border: 1px solid rgba(16,185,129,0.3); }
+  .badge-red { background: rgba(239,68,68,0.15); color: var(--accent2); border: 1px solid rgba(239,68,68,0.3); }
+  .badge-yellow { background: rgba(245,158,11,0.15); color: var(--accent); border: 1px solid rgba(245,158,11,0.3); }
+  .badge-blue { background: rgba(59,130,246,0.15); color: var(--blue); border: 1px solid rgba(59,130,246,0.3); }
+
+  .stars { display: flex; gap: 2px; align-items: center; }
+  .star-wrap {
+    position: relative; display: inline-block; width: 26px; height: 26px;
+    cursor: pointer; user-select: none;
+  }
+  .star-base {
+    font-size: 22px; line-height: 1.1; filter: grayscale(1);
+    opacity: 0.25; user-select: none; display: block;
+  }
+  .star-fill {
+    position: absolute; top: 0; left: 0; font-size: 22px; line-height: 1.1;
+    overflow: hidden; user-select: none; transition: width 0.1s; display: block;
+    pointer-events: none;
+  }
+
+  /* MODAL GENÉRICO */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.7);
+    z-index: 500; align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    padding: 22px; width: 100%; max-width: 400px;
+    animation: fadeIn 0.2s ease;
+  }
+  .modal-title { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: var(--accent); margin-bottom: 16px; }
+
+  /* MODAL CONFIRMAÇÃO DELETE */
+  .modal-confirm {
+    background: var(--surface); border: 2px solid var(--accent2); border-radius: 16px;
+    padding: 24px; width: 100%; max-width: 360px;
+    animation: fadeIn 0.2s ease; text-align: center;
+  }
+  .modal-confirm-icon { font-size: 42px; margin-bottom: 10px; }
+  .modal-confirm-title { font-family: 'Bebas Neue', sans-serif; font-size: 22px; color: var(--accent2); margin-bottom: 8px; }
+  .modal-confirm-desc { font-size: 14px; color: var(--muted); margin-bottom: 20px; line-height: 1.5; }
+  .modal-confirm-btns { display: flex; gap: 10px; }
+
+  /* PRESENCE */
+  .presence-toggle {
+    width: 44px; height: 24px; border-radius: 12px; border: none; cursor: pointer;
+    transition: all 0.3s; position: relative; flex-shrink: 0;
+  }
+  .presence-toggle::after {
+    content: ''; position: absolute; top: 3px; left: 3px;
+    width: 18px; height: 18px; border-radius: 9px; background: #fff;
+    transition: transform 0.3s;
+  }
+  .presence-toggle.present { background: var(--accent3); }
+  .presence-toggle.present::after { transform: translateX(20px); }
+  .presence-toggle.absent { background: var(--muted); }
+
+  /* SUMMARY CARDS */
+  .summary-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .summary-card {
+    background: var(--surface2); border-radius: 12px; padding: 14px;
+    border: 1px solid var(--border); text-align: center;
+  }
+  .summary-value { font-family: 'Bebas Neue', sans-serif; font-size: 28px; }
+  .summary-label { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+  /* PLACAR */
+  .placar-time { text-align:center; }
+  .placar-time-nome { font-family:'Bebas Neue',sans-serif; font-size:18px; letter-spacing:1px; margin-bottom:8px; }
+  .placar-score { font-family:'Bebas Neue',sans-serif; font-size:70px; line-height:1; margin-bottom:10px; }
+  .placar-vs { font-family:'Bebas Neue',sans-serif; font-size:22px; color:var(--muted); }
+  .placar-btns { display:flex; gap:6px; justify-content:center; }
+  .placar-timer-display {
+    font-family:'Bebas Neue',sans-serif; font-size:48px; letter-spacing:4px;
+    color:var(--text); transition:color 0.3s; line-height:1;
+  }
+  .placar-timer-display.finished { color:var(--accent2); animation: blink 1s step-end infinite; }
+  @keyframes blink { 50% { opacity:0.4; } }
+  .periodo-btn {
+    padding:5px 10px; border-radius:6px; border:1.5px solid var(--border);
+    background:transparent; color:var(--muted); font-family:'Bebas Neue',sans-serif;
+    font-size:15px; cursor:pointer; transition:all 0.2s; width:36px; text-align:center;
+  }
+  .periodo-btn.active { border-color:var(--accent); color:var(--accent); background:rgba(245,158,11,0.1); }
+
+  /* RESUMO cards */
+  .resumo-next-card {
+    background: var(--surface2); border:1px solid var(--border); border-radius:12px;
+    padding:16px; margin-bottom:14px;
+  }
+  .team-display {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 12px;
+    margin-top: 14px;
+  }
+  .team-card {
+    border-radius: 12px; padding: 14px;
+    border: 2px solid;
+  }
+  .team-a { border-color: var(--blue); background: rgba(59,130,246,0.08); }
+  .team-b { border-color: var(--accent2); background: rgba(239,68,68,0.08); }
+  .team-banco { border-color: var(--muted); background: rgba(100,116,139,0.08); margin-top: 12px; }
+  .team-name { font-family: 'Bebas Neue', sans-serif; font-size: 18px; margin-bottom: 8px; }
+  .team-a .team-name { color: var(--blue); }
+  .team-b .team-name { color: var(--accent2); }
+  .team-banco .team-name { color: var(--muted); }
+  .team-player {
+    font-size: 13px; padding: 5px 0; border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between; gap: 6px;
+  }
+  .team-player:last-child { border-bottom: none; }
+  .player-pos-tag {
+    font-size: 10px; color: var(--muted); background: var(--surface);
+    border: 1px solid var(--border); border-radius: 4px;
+    padding: 1px 5px; white-space: nowrap; flex-shrink: 0;
+  }
+
+  /* EMPTY STATE */
+  .empty { text-align: center; padding: 40px 20px; color: var(--muted); }
+  .empty-icon { font-size: 48px; margin-bottom: 10px; }
+
+  /* TOAST */
+  #toast {
+    position: fixed; bottom: 20px; right: 20px; z-index: 999;
+    padding: 12px 20px; border-radius: 10px; font-size: 14px; font-weight: 700;
+    transform: translateY(80px); opacity: 0; transition: all 0.3s;
+    pointer-events: none;
+  }
+  #toast.show { transform: none; opacity: 1; }
+  #toast.success { background: var(--accent3); color: #fff; }
+  #toast.error { background: var(--accent2); color: #fff; }
+  #toast.info { background: var(--blue); color: #fff; }
+
+  /* SORTEIO ANIMAÇÃO */
+  .sorteio-spin { animation: spin 0.5s ease; }
+  @keyframes spin {
+    0% { transform: rotate(0deg) scale(0.9); opacity: 0.5; }
+    50% { transform: rotate(180deg) scale(1.05); opacity: 1; }
+    100% { transform: rotate(360deg) scale(1); opacity: 1; }
+  }
+
+  /* DIVIDER */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
+
+  .flex-between { display: flex; justify-content: space-between; align-items: center; }
+  .gap-8 { display: flex; gap: 8px; }
+  .mt-10 { margin-top: 10px; }
+
+  /* Filtros */
+  .filter-row { display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+  .filter-chip {
+    padding: 5px 12px; border-radius: 20px; border: 1.5px solid var(--border);
+    background: transparent; color: var(--muted); font-size: 12px; font-weight: 700;
+    cursor: pointer; transition: all 0.2s;
+  }
+  .filter-chip.active { border-color: var(--accent); color: var(--accent); background: rgba(245,158,11,0.08); }
+
+  .player-avatar {
+    width: 38px; height: 38px; border-radius: 50%; background: var(--accent);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Bebas Neue', sans-serif; font-size: 14px; color: #000; flex-shrink: 0;
+    letter-spacing: 0.5px;
+  }
+
+  /* ENCERRAR JOGO - confirmação inline */
+  .encerrar-confirm {
+    background: rgba(16,185,129,0.08); border: 1.5px solid rgba(16,185,129,0.3);
+    border-radius: 10px; padding: 10px 12px; animation: fadeIn 0.2s ease;
+    flex: 1;
+  }
+  .encerrar-confirm-titulo { font-size: 12px; font-weight: 700; color: var(--accent3); margin-bottom: 6px; }
+
+  /* FILA - botão remover jogador */
+  .fila-remove-btn {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 16px; height: 16px; border-radius: 50%; border: none;
+    background: rgba(239,68,68,0.2); color: var(--accent2);
+    font-size: 11px; font-weight: 900; cursor: pointer; margin-left: 4px;
+    line-height: 1; transition: background 0.2s; flex-shrink: 0;
+  }
+  .fila-remove-btn:hover { background: var(--accent2); color: #fff; }
+
+  /* HISTÓRICO expandível no Resumo */
+  .hist-item {
+    background: var(--surface2); border-radius: 10px; margin-bottom: 8px;
+    border: 1px solid var(--border); overflow: hidden; cursor: pointer;
+    transition: border-color 0.2s;
+  }
+  .hist-item:hover { border-color: var(--accent); }
+  .hist-item-header {
+    display: flex; align-items: center; gap: 10px; padding: 12px 14px;
+  }
+  .hist-presenca-lista { border-top: 1px solid var(--border); padding: 10px 12px; }
+
+  /* RANKING STATS */
+  .rank-stats { display:flex; gap:10px; flex-shrink:0; align-items:center; }
+  .rank-stat { text-align:center; min-width:32px; }
+  .rank-stat-num { font-family:'Bebas Neue',sans-serif; font-size:20px; line-height:1; }
+  .rank-stat-lbl { font-size:9px; color:var(--muted); text-transform:uppercase; letter-spacing:0.5px; }
+  .rank-pos-num {
+    font-family:'Bebas Neue',sans-serif; font-size:22px;
+    width:30px; text-align:center; flex-shrink:0; line-height:1;
+  }
+  /* cabeçalho da tabela de stats */
+  .rank-header {
+    display:flex; align-items:center; gap:10px; padding: 4px 14px 6px;
+    border-bottom: 1px solid var(--border); margin-bottom:4px;
+  }
+  .rank-header-lbl { font-size:10px; color:var(--muted); font-weight:700; text-transform:uppercase; letter-spacing:0.5px; text-align:center; min-width:32px; }
+  .badge-encerrado { background: rgba(16,185,129,0.12); color: var(--accent3); border: 1px solid rgba(16,185,129,0.3); }
+  .select-all-bar {
+    display: flex; align-items: center; justify-content: space-between;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 14px; margin-bottom: 10px;
+  }
+  .select-all-label { font-size: 13px; font-weight: 700; color: var(--muted); }
+
+  /* CONFIRMAÇÃO PERDEDOR */
+  .conf-perdedor {
+    margin-top: 14px; padding: 14px;
+    background: rgba(239,68,68,0.06); border: 1.5px solid rgba(239,68,68,0.25);
+    border-radius: 12px; animation: fadeIn 0.2s ease;
+  }
+  .conf-perdedor-titulo {
+    font-size: 11px; color: var(--muted); font-weight: 700;
+    text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;
+  }
+  .conf-perdedor-badge {
+    display: inline-block; padding: 6px 14px;
+    border-radius: 8px; font-weight: 900; font-size: 15px;
+    margin-bottom: 12px;
+  }
+  .conf-check-wrap {
+    display: flex; align-items: center; gap: 10px;
+    cursor: pointer; margin-bottom: 14px;
+    padding: 10px 12px; border-radius: 8px;
+    background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+    user-select: none;
+  }
+  .conf-check-wrap input[type=checkbox] {
+    width: 20px; height: 20px; min-width: 20px; cursor: pointer;
+    accent-color: var(--accent2); border-radius: 4px;
+  }
+  .conf-check-wrap span { font-size: 14px; font-weight: 700; }
+
+  /* BOTÕES PERDEDOR */
+  .perdeu-btns { display: flex; gap: 8px; margin-top: 14px; padding: 12px; background: rgba(245,158,11,0.05); border: 1px solid rgba(245,158,11,0.2); border-radius: 10px; }
+  .perdeu-label { font-size: 11px; color: var(--muted); font-weight: 700; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+    border-radius: 12px; padding: 14px;
+    border: 2px dashed var(--muted);
+    background: rgba(100,116,139,0.06);
+    margin-top: 12px;
+  }
+  .banco-players { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+  .banco-player-chip {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 20px; padding: 4px 12px; font-size: 13px; font-weight: 600;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div>🏐</div>
+  <div>
+    <div class="logo">Vôlei <span>Manager</span></div>
+    <div class="header-sub" id="header-grupo-nome">Gestão do seu grupo</div>
+  </div>
+</header>
+
+<div class="app-wrapper">
+<aside class="sidebar">
+  <button class="nav-btn active" onclick="showSection('resumo',this)"><span class="nav-icon">📊</span><span class="nav-label">Resumo</span></button>
+  <button class="nav-btn" onclick="showSection('placar',this)"><span class="nav-icon">🏆</span><span class="nav-label">Placar</span></button>
+  <button class="nav-btn" onclick="showSection('sorteio',this)"><span class="nav-icon">🎲</span><span class="nav-label">Sorteio</span></button>
+  <button class="nav-btn" onclick="showSection('classificacao',this)"><span class="nav-icon">🥇</span><span class="nav-label">Classificação</span></button>
+  <hr class="nav-divider">
+  <button class="nav-btn" onclick="showSection('jogos',this)"><span class="nav-icon">🏐</span><span class="nav-label">Jogos</span></button>
+  <button class="nav-btn" onclick="showSection('jogadores',this)"><span class="nav-icon">👥</span><span class="nav-label">Jogadores</span></button>
+  <button class="nav-btn" onclick="showSection('financeiro',this)"><span class="nav-icon">💰</span><span class="nav-label">Financeiro</span></button>
+  <button class="nav-btn" onclick="showSection('configuracao',this)"><span class="nav-icon">⚙️</span><span class="nav-label">Configuração</span></button>
+</aside>
+
+<main>
+
+  <!-- RESUMO -->
+  <div class="section active" id="sec-resumo">
+    <div id="resumo-content"></div>
+  </div>
+
+  <!-- PLACAR -->
+  <div class="section" id="sec-placar">
+    <div id="placar-content"></div>
+  </div>
+
+  <!-- CLASSIFICAÇÃO -->
+  <div class="section" id="sec-classificacao">
+    <div id="classificacao-content"></div>
+  </div>
+  <div class="section" id="sec-configuracao">
+    <div id="config-content"></div>
+  </div>
+
+  <div class="section" id="sec-financeiro">
+    <div class="card">
+      <div class="card-title">💰 Lançar Receita / Custo</div>
+      <div class="form-group">
+        <label>Tipo</label>
+        <select id="fin-tipo">
+          <option value="receita-mensalidade">📥 Receita — Mensalidade</option>
+          <option value="receita-avulso">📥 Receita — Avulso</option>
+          <option value="custo">📤 Custo</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Nome / Descrição</label>
+        <input type="text" id="fin-nome" placeholder="Ex: João Silva / Aluguel da quadra" list="fin-nome-sugestoes" autocomplete="off">
+        <datalist id="fin-nome-sugestoes"></datalist>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Competência</label>
+          <input type="month" id="fin-competencia">
+        </div>
+        <div class="form-group">
+          <label>Data</label>
+          <input type="date" id="fin-data">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Valor (R$)</label>
+        <input type="number" id="fin-valor" placeholder="0,00" step="0.01" min="0">
+      </div>
+      <button class="btn btn-primary btn-full mt-10" onclick="addFinanceiro()">✚ Registrar Lançamento</button>
+    </div>
+
+    <div class="filter-row" id="fin-filters">
+      <button class="filter-chip active" onclick="filterFin('todos', this)">Todos</button>
+      <button class="filter-chip" onclick="filterFin('receita-mensalidade', this)">Mensalidade</button>
+      <button class="filter-chip" onclick="filterFin('receita-avulso', this)">Avulso</button>
+      <button class="filter-chip" onclick="filterFin('custo', this)">Custos</button>
+      <button id="chip-pendentes" class="filter-chip" onclick="toggleFinPendente()" style="margin-left:auto">⏳ Pendentes</button>
+    </div>
+
+    <div id="fin-filter-card"></div>
+
+    <div id="fin-list"></div>
+  </div>
+
+  <!-- JOGADORES -->
+  <div class="section" id="sec-jogadores">
+    <div class="card">
+      <div class="card-title">👤 Cadastrar Jogador</div>
+      <div class="form-group">
+        <label>Nome do Jogador</label>
+        <input type="text" id="jog-nome" placeholder="Nome completo">
+      </div>
+      <div class="form-group">
+        <label>Posição</label>
+        <select id="jog-posicao">
+          <option value="">Não informado</option>
+          <option>Levantador</option>
+          <option>Líbero</option>
+          <option>Central</option>
+          <option>Ponteiro</option>
+          <option>Oposto</option>
+        </select>
+      </div>
+      <button class="btn btn-primary btn-full mt-10" onclick="addJogador()">✚ Cadastrar</button>
+    </div>
+    <div id="jog-filter-card"></div>
+    <div id="jog-list"></div>
+  </div>
+
+  <!-- JOGOS -->
+  <div class="section" id="sec-jogos">
+    <div class="card">
+      <div class="card-title">🗓️ Registrar Jogo</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Data do Jogo</label>
+          <input type="date" id="jogo-data">
+        </div>
+        <div class="form-group">
+          <label>Competência</label>
+          <input type="month" id="jogo-comp">
+        </div>
+      </div>
+      <div class="form-group">
+        <label>Observação</label>
+        <input type="text" id="jogo-obs" placeholder="Ex: Partida treino, torneio...">
+      </div>
+      <button class="btn btn-primary btn-full mt-10" onclick="addJogo()">✚ Criar Jogo</button>
+    </div>
+
+    <div id="jogo-list"></div>
+  </div>
+
+  <!-- SORTEIO -->
+  <div class="section" id="sec-sorteio">
+    <div class="card">
+      <div class="card-title">🎲 Sortear Times</div>
+      <div class="form-group">
+        <label>Jogo de referência (presença)</label>
+        <select id="sort-jogo">
+          <option value="">— Selecionar Jogo —</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Jogadores por time</label>
+        <select id="sort-qtd">
+          <option value="2">2 por time</option>
+          <option value="3">3 por time</option>
+          <option value="4">4 por time</option>
+          <option value="5">5 por time</option>
+          <option value="6" selected>6 por time</option>
+          <option value="7">7 por time</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Critério</label>
+        <select id="sort-criterio">
+          <option value="aleatorio">🎲 Aleatório</option>
+          <option value="equilibrado">⚖️ Equilibrado (por nota)</option>
+        </select>
+      </div>
+      <button class="btn btn-success btn-full mt-10" onclick="sortear()" id="btn-sort">🎲 Realizar Sorteio</button>
+    </div>
+    <div id="sort-result"></div>
+  </div>
+
+  <!-- RESUMO -->
+  <div class="section" id="sec-resumo">
+    <div id="resumo-content"></div>
+  </div>
+
+</main>
+</div><!-- /app-wrapper -->
+<div class="modal-overlay" id="modal-editar">
+  <div class="modal">
+    <div class="modal-title">✏️ Editar Jogador</div>
+    <input type="hidden" id="edit-id">
+    <div class="form-group">
+      <label>Nome</label>
+      <input type="text" id="edit-nome" placeholder="Nome completo">
+    </div>
+    <div class="form-group">
+      <label>Posição</label>
+      <select id="edit-posicao">
+        <option value="">Não informado</option>
+        <option>Levantador</option>
+        <option>Líbero</option>
+        <option>Central</option>
+        <option>Ponteiro</option>
+        <option>Oposto</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:6px">
+      <button class="btn btn-ghost btn-full" onclick="fecharModal('modal-editar')">Cancelar</button>
+      <button class="btn btn-primary btn-full" onclick="salvarEdicaoJogador()">✔ Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL EDIÇÃO FINANCEIRO -->
+<div class="modal-overlay" id="modal-editar-fin">
+  <div class="modal">
+    <div class="modal-title">✏️ Editar Lançamento</div>
+    <input type="hidden" id="fin-edit-id">
+    <div class="form-group">
+      <label>Tipo</label>
+      <select id="fin-edit-tipo">
+        <option value="receita-mensalidade">📥 Receita — Mensalidade</option>
+        <option value="receita-avulso">📥 Receita — Avulso</option>
+        <option value="custo">📤 Custo</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Nome / Descrição</label>
+      <input type="text" id="fin-edit-nome" placeholder="Ex: João Silva / Aluguel da quadra">
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Competência</label>
+        <input type="month" id="fin-edit-competencia">
+      </div>
+      <div class="form-group">
+        <label>Data</label>
+        <input type="date" id="fin-edit-data">
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Valor (R$)</label>
+      <input type="number" id="fin-edit-valor" placeholder="0,00" step="0.01" min="0">
+    </div>
+    <div style="display:flex;gap:10px;margin-top:6px">
+      <button class="btn btn-ghost btn-full" onclick="fecharModal('modal-editar-fin')">Cancelar</button>
+      <button class="btn btn-primary btn-full" onclick="salvarEdicaoFin()">✔ Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL CONFIRMAÇÃO DELETE -->
+<div class="modal-overlay" id="modal-confirmar-delete">
+  <div class="modal-confirm">
+    <div class="modal-confirm-icon">🗑️</div>
+    <div class="modal-confirm-title">Confirmar Exclusão</div>
+    <div class="modal-confirm-desc" id="delete-desc">Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.</div>
+    <div class="modal-confirm-btns">
+      <button class="btn btn-ghost btn-full" onclick="fecharModal('modal-confirmar-delete')">Cancelar</button>
+      <button class="btn btn-danger btn-full" onclick="confirmarDelete()">🗑 Excluir</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL PAUSAR / RETORNAR JOGADOR -->
+<div class="modal-overlay" id="modal-sorteio-acao">
+  <div class="modal-confirm" id="sort-acao-box">
+    <div class="modal-confirm-icon" id="sort-acao-icon">⏸️</div>
+    <div class="modal-confirm-title" id="sort-acao-titulo">Confirmar</div>
+    <div class="modal-confirm-desc" id="sort-acao-desc"></div>
+    <div class="modal-confirm-btns">
+      <button class="btn btn-ghost btn-full" onclick="fecharModal('modal-sorteio-acao')">Cancelar</button>
+      <button class="btn btn-full" id="sort-acao-btn" onclick="executarAcaoSorteio()">Confirmar</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ===================== DATA =====================
+let appData = JSON.parse(localStorage.getItem('volei_data') || JSON.stringify({
+  financeiro: [], jogadores: [], jogos: [],
+  config: { nomeGrupo: '', bloquearPresenca: false, maxPresenca: 0 }
+}));
+// Retrocompatibilidade: garantir que config existe em dados antigos
+if (!appData.config) appData.config = { nomeGrupo: '', bloquearPresenca: false, maxPresenca: 0 };
+
+function save() {
+  localStorage.setItem('volei_data', JSON.stringify(appData));
+}
+
+function uid() {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2);
+}
+
+// ===================== UI =====================
+function showSection(id, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('sec-' + id).classList.add('active');
+  btn.classList.add('active');
+  if (id === 'resumo') renderResumo();
+  if (id === 'placar') renderPlacar();
+  if (id === 'classificacao') renderClassificacao();
+  if (id === 'sorteio') renderSorteioSelect();
+  if (id === 'jogos') renderJogos();
+  if (id === 'configuracao') renderConfiguracao();
+}
+
+function toast(msg, type = 'success') {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.className = 'show ' + type;
+  setTimeout(() => t.className = '', 2500);
+}
+
+// ===================== DELETE CONFIRMAÇÃO =====================
+let pendingDelete = null;
+
+function solicitarDelete(tipo, id, desc) {
+  pendingDelete = { tipo, id };
+  document.getElementById('delete-desc').textContent = desc || 'Tem certeza que deseja excluir este item? Esta ação não pode ser desfeita.';
+  document.getElementById('modal-confirmar-delete').classList.add('open');
+}
+
+function confirmarDelete() {
+  if (!pendingDelete) return;
+  const { tipo, id } = pendingDelete;
+  if (tipo === 'financeiro') {
+    appData.financeiro = appData.financeiro.filter(f => f.id !== id);
+    save(); renderFinanceiro();
+    toast('Lançamento excluído!');
+  } else if (tipo === 'jogador') {
+    appData.jogadores = appData.jogadores.filter(j => j.id !== id);
+    save(); renderJogadores();
+    toast('Jogador excluído!');
+  } else if (tipo === 'jogo') {
+    appData.jogos = appData.jogos.filter(j => j.id !== id);
+    save(); renderJogos(); renderSorteioSelect();
+    toast('Jogo excluído!');
+  }
+  fecharModal('modal-confirmar-delete');
+  pendingDelete = null;
+}
+
+// ===================== MODAL =====================
+function fecharModal(id) {
+  document.getElementById(id).classList.remove('open');
+}
+
+// Fechar modal clicando fora
+document.querySelectorAll('.modal-overlay').forEach(overlay => {
+  overlay.addEventListener('click', function(e) {
+    if (e.target === this) this.classList.remove('open');
+  });
+});
+
+// ===================== FINANCEIRO =====================
+let finFilter = 'todos';
+let finFiltroDe       = '';
+let finFiltroAte      = '';
+let finFiltroMes      = '';
+let finFiltroAno      = '';
+let finFiltroNome     = '';
+let finFiltroPendente = false;
+
+function filterFin(f, btn) {
+  finFilter = f;
+  document.querySelectorAll('#fin-filters .filter-chip').forEach(c => c.classList.remove('active'));
+  btn.classList.add('active');
+  renderFinLista();
+}
+
+function setFinFiltroDe(v)    { finFiltroDe  = v; renderFinFiltros(); renderFinLista(); }
+function setFinFiltroAte(v)   { finFiltroAte = v; renderFinFiltros(); renderFinLista(); }
+function setFinFiltroMes(v)   { finFiltroMes = v; renderFinFiltros(); renderFinLista(); }
+function setFinFiltroAno(v)   { finFiltroAno = v; renderFinFiltros(); renderFinLista(); }
+function setFinFiltroNome(v)  { finFiltroNome = v; renderFinLista(); }  // só lista, sem recriar filtros
+function toggleFinPendente()  { finFiltroPendente = !finFiltroPendente; renderFinLista(); }
+
+function limparFiltrosFin() {
+  finFiltroDe = ''; finFiltroAte = ''; finFiltroMes = ''; finFiltroAno = '';
+  finFiltroNome = ''; finFiltroPendente = false;
+  renderFinanceiro();
+}
+
+// Autocomplete de nomes: preenche datalist com jogadores ativos
+function atualizarDatalist() {
+  const dl = document.getElementById('fin-nome-sugestoes');
+  if (!dl) return;
+  const ativos = appData.jogadores.filter(j => j.ativo !== false);
+  dl.innerHTML = ativos.map(j => `<option value="${j.nome}">`).join('');
+}
+
+// Toggle OK/Pendente de receita
+function toggleFinStatus(id) {
+  const f = appData.financeiro.find(f => f.id === id);
+  if (!f || !f.tipo.startsWith('receita')) return;
+  f.status = (f.status === 'ok') ? 'pendente' : 'ok';
+  save();
+  renderFinanceiro();
+  renderJogadores(); // atualiza badge de pendência nos jogadores
+}
+
+function renderFinFiltros() {
+  const filterCard = document.getElementById('fin-filter-card');
+  if (!filterCard) return;
+
+  const anos = [...new Set(appData.financeiro.map(f => f.competencia.split('-')[0]))].sort();
+  const meses = [
+    ['01','Janeiro'],['02','Fevereiro'],['03','Março'],['04','Abril'],
+    ['05','Maio'],['06','Junho'],['07','Julho'],['08','Agosto'],
+    ['09','Setembro'],['10','Outubro'],['11','Novembro'],['12','Dezembro']
+  ];
+
+  filterCard.innerHTML = `
+    <div class="card" style="padding:14px;margin-bottom:14px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div class="form-group" style="margin:0">
+          <label>Período — De</label>
+          <input type="date" value="${finFiltroDe}" onchange="setFinFiltroDe(this.value)" style="font-size:12px;padding:7px 10px">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label>Período — Até</label>
+          <input type="date" value="${finFiltroAte}" onchange="setFinFiltroAte(this.value)" style="font-size:12px;padding:7px 10px">
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <div class="form-group" style="margin:0">
+          <label>Mês</label>
+          <select onchange="setFinFiltroMes(this.value)">
+            <option value="">— Todos —</option>
+            ${meses.map(([v,l]) => `<option value="${v}" ${finFiltroMes===v?'selected':''}>${l}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group" style="margin:0">
+          <label>Ano</label>
+          <select onchange="setFinFiltroAno(this.value)">
+            <option value="">— Todos —</option>
+            ${anos.map(a => `<option value="${a}" ${finFiltroAno===a?'selected':''}>${a}</option>`).join('')}
+          </select>
+        </div>
+      </div>
+      <div class="form-group" style="margin:0 0 8px">
+        <label>Nome / Descrição</label>
+        <input type="text" id="fin-filtro-nome" placeholder="Buscar por nome ou descrição..."
+          value="${finFiltroNome}"
+          oninput="finFiltroNome=this.value;renderFinLista()"
+          style="font-size:12px;padding:7px 10px">
+      </div>
+      ${(finFiltroDe||finFiltroAte||finFiltroMes||finFiltroAno||finFiltroNome||finFiltroPendente) ? `
+      <div style="text-align:right">
+        <button class="btn btn-ghost btn-sm" onclick="limparFiltrosFin()">✕ Limpar filtros</button>
+      </div>` : ''}
+    </div>`;
+}
+
+function renderFinLista() {
+  const list = document.getElementById('fin-list');
+  if (!list) return;
+
+  // Atualizar chip pendentes
+  const chipPend = document.getElementById('chip-pendentes');
+  if (chipPend) chipPend.classList.toggle('active', finFiltroPendente);
+
+  // Aplicar filtros
+  let items = finFilter === 'todos'
+    ? appData.financeiro
+    : appData.financeiro.filter(f => f.tipo === finFilter);
+  if (finFiltroDe)       items = items.filter(f => f.data >= finFiltroDe);
+  if (finFiltroAte)      items = items.filter(f => f.data <= finFiltroAte);
+  if (finFiltroMes)      items = items.filter(f => f.competencia.split('-')[1] === finFiltroMes);
+  if (finFiltroAno)      items = items.filter(f => f.competencia.split('-')[0] === finFiltroAno);
+  if (finFiltroNome)     items = items.filter(f => f.nome.toLowerCase().includes(finFiltroNome.toLowerCase()));
+  if (finFiltroPendente) items = items.filter(f => f.tipo.startsWith('receita') && f.status !== 'ok');
+
+  // Totais
+  const totRec  = items.filter(f => f.tipo.startsWith('receita')).reduce((s,f) => s+f.valor, 0);
+  const totCust = items.filter(f => f.tipo === 'custo').reduce((s,f) => s+f.valor, 0);
+  const totSald = totRec - totCust;
+
+  const totaisHtml = `
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:12px">
+      <div style="background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:10px;padding:10px;text-align:center">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:var(--accent3)">R$ ${formatBRL(totRec)}</div>
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px">Receitas</div>
+      </div>
+      <div style="background:rgba(239,68,68,0.08);border:1px solid rgba(239,68,68,0.2);border-radius:10px;padding:10px;text-align:center">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:var(--accent2)">R$ ${formatBRL(totCust)}</div>
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px">Custos</div>
+      </div>
+      <div style="background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:10px;padding:10px;text-align:center">
+        <div style="font-family:'Bebas Neue',sans-serif;font-size:17px;color:${totSald>=0?'var(--accent3)':'var(--accent2)'}">R$ ${formatBRL(Math.abs(totSald))}</div>
+        <div style="font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:0.4px">Saldo ${totSald>=0?'▲':'▼'}</div>
+      </div>
+    </div>`;
+
+  if (!items.length) {
+    list.innerHTML = totaisHtml + `<div class="empty"><div class="empty-icon">💸</div><div>Nenhum lançamento encontrado</div></div>`;
+    return;
+  }
+
+  const sorted = [...items].sort((a,b) => b.data.localeCompare(a.data));
+  const tipoLabel = { 'receita-mensalidade': '📥 Mensalidade', 'receita-avulso': '📥 Avulso', 'custo': '📤 Custo' };
+  const tipoBadge = { 'receita-mensalidade': 'badge-green', 'receita-avulso': 'badge-blue', 'custo': 'badge-red' };
+
+  list.innerHTML = totaisHtml + sorted.map(f => {
+    const isReceita = f.tipo.startsWith('receita');
+    const statusOk  = f.status === 'ok';
+    const statusBtn = isReceita ? `
+      <button onclick="toggleFinStatus('${f.id}')"
+        title="${statusOk?'Recebido — clique para marcar como pendente':'Pendente — clique para marcar como recebido'}"
+        style="border:none;background:none;cursor:pointer;font-size:18px;padding:2px 4px;line-height:1;flex-shrink:0">
+        ${statusOk ? '✅' : '⏳'}
+      </button>` : '';
+    return `
+    <div class="list-item" style="${!isReceita||statusOk?'':'opacity:0.85'}">
+      <div class="list-item-info">
+        <div class="list-item-name">${f.nome}</div>
+        <div class="list-item-sub">
+          <span class="badge ${tipoBadge[f.tipo]}">${tipoLabel[f.tipo]}</span>
+          &nbsp;${formatDate(f.data)} &nbsp;Comp: ${formatMes(f.competencia)}
+        </div>
+      </div>
+      <div style="font-weight:900;font-size:16px;color:${isReceita?'var(--accent3)':'var(--accent2)'}">
+        ${isReceita?'+':'-'}R$ ${formatBRL(f.valor)}
+      </div>
+      ${statusBtn}
+      <button class="btn btn-ghost btn-sm" onclick="abrirEditarFin('${f.id}')" title="Editar">✏️</button>
+      <button class="btn btn-danger btn-sm" onclick="solicitarDelete('financeiro','${f.id}','Excluir o lançamento &quot;${f.nome}&quot;? Esta ação não pode ser desfeita.')" title="Excluir">🗑</button>
+    </div>`;
+  }).join('');
+}
+
+function renderFinanceiro() {
+  atualizarDatalist();
+  renderFinFiltros();
+  renderFinLista();
+}
+
+function addFinanceiro() {
+  const tipo = document.getElementById('fin-tipo').value;
+  const nome = document.getElementById('fin-nome').value.trim();
+  const competencia = document.getElementById('fin-competencia').value;
+  const data_val = document.getElementById('fin-data').value;
+  const valor = parseFloat(document.getElementById('fin-valor').value);
+
+  if (!nome || !competencia || !data_val || isNaN(valor) || valor <= 0) {
+    return toast('Preencha todos os campos!', 'error');
+  }
+
+  const entry = { id: uid(), tipo, nome, competencia, data: data_val, valor };
+  if (tipo.startsWith('receita')) entry.status = 'pendente';
+  appData.financeiro.push(entry);
+  save();
+  document.getElementById('fin-nome').value = '';
+  document.getElementById('fin-valor').value = '';
+  renderFinanceiro();
+  if (tipo.startsWith('receita')) renderJogadores(); // atualiza status de pendência
+  toast('Lançamento registrado!');
+}
+
+function abrirEditarFin(id) {
+  const f = appData.financeiro.find(f => f.id === id);
+  if (!f) return;
+  document.getElementById('fin-edit-id').value = id;
+  document.getElementById('fin-edit-tipo').value = f.tipo;
+  document.getElementById('fin-edit-nome').value = f.nome;
+  document.getElementById('fin-edit-competencia').value = f.competencia;
+  document.getElementById('fin-edit-data').value = f.data;
+  document.getElementById('fin-edit-valor').value = f.valor;
+  document.getElementById('modal-editar-fin').classList.add('open');
+}
+
+function salvarEdicaoFin() {
+  const id = document.getElementById('fin-edit-id').value;
+  const tipo = document.getElementById('fin-edit-tipo').value;
+  const nome = document.getElementById('fin-edit-nome').value.trim();
+  const competencia = document.getElementById('fin-edit-competencia').value;
+  const data_val = document.getElementById('fin-edit-data').value;
+  const valor = parseFloat(document.getElementById('fin-edit-valor').value);
+
+  if (!nome || !competencia || !data_val || isNaN(valor) || valor <= 0) {
+    return toast('Preencha todos os campos!', 'error');
+  }
+
+  const f = appData.financeiro.find(f => f.id === id);
+  if (f) {
+    f.tipo = tipo; f.nome = nome; f.competencia = competencia; f.data = data_val; f.valor = valor;
+    save(); renderFinanceiro(); renderJogadores(); fecharModal('modal-editar-fin');
+    toast('Lançamento atualizado!');
+  }
+}
+
+function irParaFinanceiro(nome, comp) {
+  // Navegar para a aba Financeiro
+  const navBtns = document.querySelectorAll('.nav-btn');
+  let finBtn = null;
+  navBtns.forEach(b => { if (b.textContent.includes('Financeiro')) finBtn = b; });
+  if (finBtn) showSection('financeiro', finBtn);
+
+  // Aplicar filtro de ciclo (mês e ano extraídos da competência YYYY-MM)
+  if (comp) {
+    const [ano, mes] = comp.split('-');
+    finFiltroAno = ano || '';
+    finFiltroMes = mes || '';
+  }
+
+  // Re-renderizar financeiro com os filtros aplicados
+  renderFinanceiro();
+
+  // Pré-preencher campos do formulário de novo lançamento
+  setTimeout(() => {
+    const nomeEl = document.getElementById('fin-nome');
+    const compEl = document.getElementById('fin-competencia');
+    if (nomeEl) { nomeEl.value = nome; nomeEl.focus(); }
+    if (compEl && comp) compEl.value = comp;
+    // Scroll suave para o formulário
+    const card = nomeEl ? nomeEl.closest('.card') : null;
+    if (card) card.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    toast(`Financeiro: "${nome}" — ciclo ${comp ? comp.split('-').reverse().join('/') : ''} pré-selecionado`, 'info');
+  }, 80);
+}
+
+function irParaFinanceiroPendente(nome, comp) {
+  // Navegar para Financeiro
+  const navBtns = document.querySelectorAll('.nav-btn');
+  let finBtn = null;
+  navBtns.forEach(b => { if (b.textContent.includes('Financeiro')) finBtn = b; });
+  if (finBtn) showSection('financeiro', finBtn);
+
+  // Aplicar filtros: nome do jogador + ciclo + apenas pendentes
+  if (comp) {
+    const [ano, mes] = comp.split('-');
+    finFiltroAno = ano || '';
+    finFiltroMes = mes || '';
+  }
+  finFiltroNome     = nome;
+  finFiltroPendente = true;
+
+  renderFinanceiro();
+
+  setTimeout(() => {
+    const list = document.getElementById('fin-list');
+    if (list) list.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const cicloLabel = comp ? comp.split('-').reverse().join('/') : '';
+    toast(`Pendências de "${nome}" — ${cicloLabel}`, 'info');
+  }, 80);
+}
+let jogFiltroMes = '';
+let jogFiltroAno = '';
+let jogFiltroPos = '';
+
+function setJogFiltroMes(v) { jogFiltroMes = v; renderJogadores(); }
+function setJogFiltroAno(v) { jogFiltroAno = v; renderJogadores(); }
+function setJogFiltroPos(v) { jogFiltroPos = v; renderJogadores(); }
+function limparFiltrosJog()  { jogFiltroMes = ''; jogFiltroAno = ''; jogFiltroPos = ''; renderJogadores(); }
+
+function addJogador() {
+  const nome = document.getElementById('jog-nome').value.trim();
+  const posicao = document.getElementById('jog-posicao').value;
+  if (!nome) return toast('Informe o nome!', 'error');
+  if (appData.jogadores.find(j => j.nome.toLowerCase() === nome.toLowerCase()))
+    return toast('Jogador já cadastrado!', 'error');
+
+  appData.jogadores.push({ id: uid(), nome, posicao, nota: 0, ativo: true });
+  save();
+  document.getElementById('jog-nome').value = '';
+  document.getElementById('jog-posicao').value = '';  // reset para "Não informado"
+  renderJogadores();
+  atualizarDatalist();
+  toast('Jogador cadastrado!');
+}
+
+function toggleAtivo(id) {
+  const j = appData.jogadores.find(j => j.id === id);
+  if (!j) return;
+  j.ativo = j.ativo === false ? true : false;
+  save();
+  renderJogadores();
+  atualizarDatalist();
+}
+
+// ===================== JOGADORES — funções =====================
+function setNota(id, nota) {
+  const j = appData.jogadores.find(j => j.id === id);
+  if (j) { j.nota = nota; save(); renderJogadores(); }
+}
+
+function abrirEditar(id) {
+  const j = appData.jogadores.find(j => j.id === id);
+  if (!j) return;
+  document.getElementById('edit-id').value = id;
+  document.getElementById('edit-nome').value = j.nome;
+  document.getElementById('edit-posicao').value = j.posicao || '';
+  document.getElementById('modal-editar').classList.add('open');
+}
+
+function salvarEdicaoJogador() {
+  const id = document.getElementById('edit-id').value;
+  const nome = document.getElementById('edit-nome').value.trim();
+  const posicao = document.getElementById('edit-posicao').value;
+  if (!nome) return toast('Informe o nome!', 'error');
+  const j = appData.jogadores.find(j => j.id === id);
+  if (j) { j.nome = nome; j.posicao = posicao; save(); renderJogadores(); atualizarDatalist(); fecharModal('modal-editar'); toast('Jogador atualizado!'); }
+}
+
+function buildStars(jogId, nota) {
+  let html = '<div class="stars">';
+  for (let n = 1; n <= 5; n++) {
+    const half = n - 0.5;
+    const fillW = nota >= n ? '100%' : nota >= half ? '50%' : '0%';
+    html += `<div class="star-wrap"
+        onclick="setNota('${jogId}', event.offsetX < this.offsetWidth / 2 ? ${half} : ${n})"
+        title="${nota > 0 ? nota + '/5' : 'Sem nota'}">
+        <span class="star-base">⭐</span>
+        <span class="star-fill" style="width:${fillW}">⭐</span>
+      </div>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+function renderJogadores() {
+  const list = document.getElementById('jog-list');
+  const filterCard = document.getElementById('jog-filter-card');
+
+  const anos  = [...new Set(appData.financeiro.map(f => f.competencia.split('-')[0]))].sort();
+  const mesesNomes = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+                      'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
+
+  if (filterCard) {
+    const temFiltro = jogFiltroMes || jogFiltroAno || jogFiltroPos;
+    const mesLabel  = jogFiltroMes ? mesesNomes[parseInt(jogFiltroMes) - 1] : '';
+    const cicloLabel = [mesLabel, jogFiltroAno].filter(Boolean).join('/');
+
+    const posicoes = ['Levantador','Líbero','Central','Ponteiro','Oposto'];
+    let posOptions = '<option value="">— Todas —</option>';
+    posicoes.forEach(p => {
+      posOptions += '<option value="' + p + '"' + (jogFiltroPos===p?' selected':'') + '>' + p + '</option>';
+    });
+    posOptions += '<option value="none"' + (jogFiltroPos==='none'?' selected':'') + '>Não informado</option>';
+
+    let mesOptions = '<option value="">— Todos —</option>';
+    mesesNomes.forEach((l, i) => {
+      const v = String(i+1).padStart(2,'0');
+      mesOptions += '<option value="' + v + '"' + (jogFiltroMes===v?' selected':'') + '>' + l + '</option>';
+    });
+
+    let anoOptions = '<option value="">— Todos —</option>';
+    anos.forEach(a => {
+      anoOptions += '<option value="' + a + '"' + (jogFiltroAno===a?' selected':'') + '>' + a + '</option>';
+    });
+
+    filterCard.innerHTML =
+      '<div class="card" style="padding:14px;margin-bottom:14px">' +
+        '<div style="font-size:12px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">' +
+          (temFiltro
+            ? '🗓️ Ciclo — <span style="color:var(--accent)">' + cicloLabel + '</span>'
+            : '🗓️ Ciclo de Referência') +
+        '</div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">' +
+          '<div class="form-group" style="margin:0"><label>Mês</label>' +
+            '<select onchange="setJogFiltroMes(this.value)">' + mesOptions + '</select></div>' +
+          '<div class="form-group" style="margin:0"><label>Ano</label>' +
+            '<select onchange="setJogFiltroAno(this.value)">' + anoOptions + '</select></div>' +
+        '</div>' +
+        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">' +
+          '<div class="form-group" style="margin:0"><label>Posição</label>' +
+            '<select onchange="setJogFiltroPos(this.value)">' + posOptions + '</select></div>' +
+          '<div style="display:flex;align-items:flex-end">' +
+            (temFiltro ? '<button class="btn btn-ghost btn-sm btn-full" onclick="limparFiltrosJog()">✕ Limpar</button>' : '') +
+          '</div>' +
+        '</div>' +
+      '</div>';
+  }
+
+  if (!appData.jogadores.length) {
+    list.innerHTML = `<div class="empty"><div class="empty-icon">👥</div><div>Nenhum jogador cadastrado</div></div>`;
+    return;
+  }
+
+  const temFiltroCiclo = jogFiltroMes || jogFiltroAno;
+
+  list.innerHTML = [...appData.jogadores]
+    .filter(j => {
+      if (!jogFiltroPos) return true;
+      if (jogFiltroPos === 'none') return !j.posicao;
+      return j.posicao === jogFiltroPos;
+    })
+    .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'))
+    .map(j => {
+      const ativo = j.ativo !== false;
+
+      let receitasJog = appData.financeiro.filter(f =>
+        f.tipo.startsWith('receita') &&
+        f.nome.toLowerCase().includes(j.nome.toLowerCase())
+      );
+      if (jogFiltroMes) receitasJog = receitasJog.filter(f => f.competencia.split('-')[1] === jogFiltroMes);
+      if (jogFiltroAno) receitasJog = receitasJog.filter(f => f.competencia.split('-')[0] === jogFiltroAno);
+
+      const temReceita   = receitasJog.length > 0;
+      const temPendencia = receitasJog.some(f => f.status !== 'ok');
+
+      // Competência do ciclo selecionado
+      const comp = jogFiltroAno && jogFiltroMes ? jogFiltroAno + '-' + jogFiltroMes : '';
+      const nomeEscapado = j.nome.replace(/'/g, "\\'");
+
+      let statusFinBadge = '';
+      if (temReceita) {
+        statusFinBadge = temPendencia
+          ? `<span class="badge" onclick="irParaFinanceiroPendente('${nomeEscapado}','${comp}')"
+              style="background:rgba(245,158,11,0.15);color:var(--accent);border:1px solid rgba(245,158,11,0.3);font-size:10px;cursor:pointer"
+              title="Ver pendências no Financeiro">⏳ Pendente</span>`
+          : `<span class="badge" style="background:rgba(16,185,129,0.15);color:var(--accent3);border:1px solid rgba(16,185,129,0.3);font-size:10px">✅ Em dia</span>`;
+      } else if (temFiltroCiclo) {
+        statusFinBadge = `<span class="badge" onclick="irParaFinanceiro('${nomeEscapado}','${comp}')"
+            style="background:rgba(100,116,139,0.1);color:var(--muted);border:1px solid rgba(100,116,139,0.2);font-size:10px;cursor:pointer"
+            title="Lançar no Financeiro">— Sem lançamento</span>`;
+      }
+
+      return `
+      <div class="list-item" style="flex-direction:column;align-items:flex-start;gap:10px;${!ativo?'opacity:0.55':''}">
+        <div style="display:flex;width:100%;align-items:center;gap:10px">
+          <div class="player-avatar" style="background:${ativo?'var(--accent)':'var(--muted)'}">${avatarInicial(j.nome)}</div>
+          <div class="list-item-info">
+            <div class="list-item-name">${j.nome}</div>
+            <div class="list-item-sub" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:3px">
+              <span>${j.posicao || 'Posição não informada'}</span>
+              ${statusFinBadge}
+            </div>
+          </div>
+          <button onclick="toggleAtivo('${j.id}')" title="${ativo?'Marcar como inativo':'Marcar como ativo'}"
+            class="badge ${ativo?'badge-green':'badge-red'}" style="cursor:pointer;border:none;font-size:11px;padding:4px 10px;white-space:nowrap">
+            ${ativo ? '● Ativo' : '○ Inativo'}
+          </button>
+          <button class="btn btn-ghost btn-sm" onclick="abrirEditar('${j.id}')" title="Editar jogador">✏️</button>
+          <button class="btn btn-danger btn-sm" onclick="solicitarDelete('jogador','${j.id}','Excluir o jogador &quot;${j.nome}&quot;? Esta ação não pode ser desfeita.')">🗑</button>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;width:100%">
+          <span style="font-size:12px;color:var(--muted);font-weight:700">NOTA:</span>
+          ${buildStars(j.id, j.nota)}
+          <span style="font-size:12px;color:var(--accent);font-weight:900">${j.nota > 0 ? j.nota + '/5' : '—'}</span>
+        </div>
+      </div>`;
+    }).join('');
+}
+
+// ===================== JOGOS =====================
+function addJogo() {
+  const dt = document.getElementById('jogo-data').value;
+  const comp = document.getElementById('jogo-comp').value;
+  const obs = document.getElementById('jogo-obs').value.trim();
+  if (!dt || !comp) return toast('Informe data e competência!', 'error');
+
+  const presencas = {};
+  appData.jogadores.filter(j => j.ativo !== false).forEach(j => presencas[j.id] = false);
+
+  appData.jogos.push({ id: uid(), data: dt, competencia: comp, obs, presencas });
+  save(); renderJogos(); renderSorteioSelect();
+  toast('Jogo criado!');
+}
+
+function togglePresenca(jogoId, jogId) {
+  const jogo = appData.jogos.find(j => j.id === jogoId);
+  if (!jogo) return;
+  const cfg = appData.config || {};
+  // Se está marcando como presente e há limite configurado, verificar
+  if (!jogo.presencas[jogId] && cfg.bloquearPresenca && cfg.maxPresenca > 0) {
+    const presentes = Object.values(jogo.presencas).filter(Boolean).length;
+    if (presentes >= cfg.maxPresenca) {
+      toast(`Limite de ${cfg.maxPresenca} jogadores atingido!`, 'error');
+      return;
+    }
+  }
+  jogo.presencas[jogId] = !jogo.presencas[jogId];
+  save(); renderJogos();
+}
+
+function toggleTodos(jogoId, marcarTodos) {
+  const jogo = appData.jogos.find(j => j.id === jogoId);
+  if (!jogo) return;
+  const cfg = appData.config || {};
+  const ativos = appData.jogadores.filter(j => j.ativo !== false);
+
+  if (marcarTodos && cfg.bloquearPresenca && cfg.maxPresenca > 0) {
+    // Marcar apenas até o limite
+    let count = 0;
+    ativos.forEach(j => {
+      if (count < cfg.maxPresenca) {
+        jogo.presencas[j.id] = true;
+        count++;
+      } else {
+        jogo.presencas[j.id] = false;
+      }
+    });
+    if (ativos.length > cfg.maxPresenca) {
+      toast(`Limite de ${cfg.maxPresenca} jogadores: apenas os primeiros foram marcados.`, 'info');
+    }
+  } else {
+    ativos.forEach(j => { jogo.presencas[j.id] = marcarTodos; });
+  }
+  save(); renderJogos();
+}
+
+let jogoExpandido = null;
+let jogoParaEncerrar = null;
+let resumoJogoExpandido = null;
+let rankFiltroInicio = '';
+let rankFiltroFim = '';
+
+function toggleJogo(id) {
+  jogoExpandido = jogoExpandido === id ? null : id;
+  renderJogos();
+}
+
+function solicitarEncerrar(id) {
+  jogoParaEncerrar = id;
+  jogoExpandido = null;
+  renderJogos();
+}
+
+function cancelarEncerrar() {
+  jogoParaEncerrar = null;
+  renderJogos();
+}
+
+function confirmarEncerrar(id) {
+  const jogo = appData.jogos.find(j => j.id === id);
+  if (jogo) {
+    jogo.encerrado = true;
+    if (currentDraw) {
+      jogo.jogoCount = { ...(currentDraw.jogoCount || {}) };
+      jogo.winsCount = { ...(currentDraw.winsCount || {}) };
+    }
+    save();
+    jogoParaEncerrar = null;
+    jogoExpandido = null;
+    renderJogos();
+    renderSorteioSelect();
+    toast('Jogo encerrado! Acesse o Resumo para ver o histórico.', 'success');
+  }
+}
+
+function renderJogos() {
+  const list = document.getElementById('jogo-list');
+  const ativos = [...appData.jogos].filter(j => !j.encerrado).sort((a,b) => b.data.localeCompare(a.data));
+
+  if (!ativos.length) {
+    const temEncerrados = appData.jogos.some(j => j.encerrado);
+    list.innerHTML = `<div class="empty"><div class="empty-icon">🏐</div><div>${temEncerrados ? 'Nenhum jogo ativo — veja o histórico no Resumo' : 'Nenhum jogo registrado'}</div></div>`;
+    return;
+  }
+
+  list.innerHTML = ativos.map(jogo => {
+    // Considerar apenas jogadores ativos que estão no jogo
+    const jogadoresDoJogo = [...appData.jogadores]
+      .filter(j => j.ativo !== false && j.id in jogo.presencas)
+      .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+
+    const presentes = jogadoresDoJogo.filter(j => jogo.presencas[j.id]).length;
+    const total     = jogadoresDoJogo.length;
+    const cfg       = appData.config || {};
+    const temLimite = cfg.bloquearPresenca && cfg.maxPresenca > 0;
+    const limiteAtingido = temLimite && presentes >= cfg.maxPresenca;
+    const expanded  = jogoExpandido === jogo.id;
+    const confirmando = jogoParaEncerrar === jogo.id;
+
+    const badgePresenca = temLimite
+      ? `<span class="badge ${limiteAtingido ? 'badge-red' : 'badge-yellow'}">${presentes}/${cfg.maxPresenca} (limite)</span>`
+      : `<span class="badge badge-yellow">${presentes}/${total} presentes</span>`;
+
+    const jogadoresHtml = jogadoresDoJogo.length ? `
+      <div class="select-all-bar">
+        <span class="select-all-label">
+          ${temLimite ? `Limite: ${presentes}/${cfg.maxPresenca}` : 'Selecionar todos'}
+        </span>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-success btn-sm" onclick="event.stopPropagation();toggleTodos('${jogo.id}',true)"
+            ${limiteAtingido ? 'disabled style="opacity:0.4;cursor:not-allowed"' : ''}>✓ Todos</button>
+          <button class="btn btn-ghost btn-sm" onclick="event.stopPropagation();toggleTodos('${jogo.id}',false)">✗ Nenhum</button>
+        </div>
+      </div>
+      ${jogadoresDoJogo.map(j => {
+        const presente = jogo.presencas[j.id];
+        const cfg = appData.config || {};
+        const limiteAtingido = cfg.bloquearPresenca && cfg.maxPresenca > 0 && presentes >= cfg.maxPresenca;
+        const desabilitar = !presente && limiteAtingido;
+        return `
+          <div class="list-item" style="padding:10px 12px${desabilitar ? ';opacity:0.45' : ''}">
+            <div class="player-avatar" style="width:32px;height:32px;font-size:11px">${avatarInicial(j.nome)}</div>
+            <div class="list-item-info">
+              <div style="font-size:14px;font-weight:700">${j.nome}</div>
+              <div style="font-size:11px;color:var(--muted)">${j.posicao || '—'}</div>
+            </div>
+            <span class="badge ${presente ? 'badge-green' : 'badge-red'}" style="font-size:10px">${presente ? '✓ Presente' : '✗ Ausente'}</span>
+            <button class="presence-toggle ${presente ? 'present' : 'absent'}"
+              onclick="${desabilitar ? '' : `event.stopPropagation();togglePresenca('${jogo.id}','${j.id}')`}"
+              ${desabilitar ? 'disabled title="Limite de presença atingido"' : ''}
+              style="${desabilitar ? 'cursor:not-allowed;opacity:0.4' : ''}"></button>
+          </div>
+        `;
+      }).join('')}
+    ` : `<div class="empty" style="padding:20px"><div>Nenhum jogador ativo cadastrado</div></div>`;
+
+    const headerActions = confirmando ? `
+      <div class="encerrar-confirm" onclick="event.stopPropagation()">
+        <div class="encerrar-confirm-titulo">🏁 Encerrar jogo de ${formatDate(jogo.data)}?</div>
+        <div style="font-size:12px;color:var(--muted);margin-bottom:8px">O jogo será arquivado no histórico do Resumo.</div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-ghost btn-sm btn-full" onclick="cancelarEncerrar()">Cancelar</button>
+          <button class="btn btn-success btn-sm btn-full" onclick="confirmarEncerrar('${jogo.id}')">✔ Confirmar</button>
+        </div>
+      </div>
+    ` : `
+      ${badgePresenca}
+      <button class="btn btn-success btn-sm" onclick="event.stopPropagation();solicitarEncerrar('${jogo.id}')" title="Encerrar Jogo">🏁</button>
+      <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();solicitarDelete('jogo','${jogo.id}','Excluir o jogo de ${formatDate(jogo.data)}? Esta ação não pode ser desfeita.')">🗑</button>
+      <span style="color:var(--muted);font-size:18px">${expanded ? '▲' : '▼'}</span>
+    `;
+
+    return `
+      <div class="card" style="padding:0;overflow:hidden">
+        <div style="padding:14px 16px;display:flex;align-items:center;gap:10px;${confirmando ? '' : 'cursor:pointer'}" ${confirmando ? '' : `onclick="toggleJogo('${jogo.id}')"`}>
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:800;font-size:15px">${formatDate(jogo.data)}</div>
+            <div style="font-size:12px;color:var(--muted)">Comp: ${formatMes(jogo.competencia)} ${jogo.obs ? '— ' + jogo.obs : ''}</div>
+          </div>
+          ${headerActions}
+        </div>
+        ${expanded && !confirmando ? `<div style="border-top:1px solid var(--border);padding:12px 12px">${jogadoresHtml}</div>` : ''}
+      </div>
+    `;
+  }).join('');
+}
+
+// ===================== SORTEIO =====================
+let currentDraw = null;
+let pendingWinner = null; // 'A' | 'B' | null — time que GANHOU
+
+function renderSorteioSelect() {
+  const sel = document.getElementById('sort-jogo');
+  const sorted = [...appData.jogos].filter(j => !j.encerrado).sort((a,b) => b.data.localeCompare(a.data));
+  sel.innerHTML = `<option value="">— Selecionar Jogo —</option>` +
+    sorted.map(j => `<option value="${j.id}">${formatDate(j.data)} — ${formatMes(j.competencia)}</option>`).join('');
+}
+
+// Retira N jogadores de um pool pelo critério
+function drawN(pool, n, criterio) {
+  if (!pool.length || n <= 0) return { drawn: [], remaining: [...pool] };
+  const need = Math.min(n, pool.length);
+  if (criterio === 'equilibrado') {
+    const sorted = [...pool].sort((a,b) => b.nota - a.nota);
+    // snake: pega posições pares para misturar níveis
+    let snaked = sorted.filter((_, i) => i % 2 === 0);
+    if (snaked.length < need) snaked = sorted;
+    const drawn = snaked.slice(0, need);
+    const ids = new Set(drawn.map(j => j.id));
+    return { drawn, remaining: pool.filter(j => !ids.has(j.id)) };
+  } else {
+    const emb = shuffle([...pool]);
+    return { drawn: emb.slice(0, need), remaining: emb.slice(need) };
+  }
+}
+
+// Sorteia o time reserva de um pool disponível
+function buildReserva(pool, qtd, criterio) {
+  if (!pool.length) return { reserva: [], nextBanco: [], reservaCompleta: false };
+  const { drawn, remaining } = drawN(pool, qtd, criterio);
+  return { reserva: drawn, nextBanco: remaining, reservaCompleta: drawn.length >= qtd };
+}
+
+function sortear() {
+  const jogoId = document.getElementById('sort-jogo').value;
+  const qtd = parseInt(document.getElementById('sort-qtd').value);
+  const criterio = document.getElementById('sort-criterio').value;
+
+  let presentes;
+  if (jogoId) {
+    const jogo = appData.jogos.find(j => j.id === jogoId);
+    if (!jogo) return toast('Jogo não encontrado!', 'error');
+    presentes = appData.jogadores.filter(j => jogo.presencas[j.id]);
+  } else {
+    presentes = [...appData.jogadores];
+  }
+
+  if (presentes.length < qtd * 2) {
+    return toast(`Precisa de pelo menos ${qtd * 2} jogadores presentes!`, 'error');
+  }
+
+  let t1, t2, bancoInicial;
+
+  if (criterio === 'equilibrado') {
+    const sorted_j = [...presentes].sort((a,b) => b.nota - a.nota);
+    const times = [[], []];
+    sorted_j.forEach((j, i) => times[i % 2].push(j));
+    t1 = times[0].slice(0, qtd);
+    t2 = times[1].slice(0, qtd);
+    const escalados = new Set([...t1, ...t2].map(j => j.id));
+    bancoInicial = presentes.filter(j => !escalados.has(j.id));
+  } else {
+    const embaralhados = shuffle([...presentes]);
+    t1 = embaralhados.slice(0, qtd);
+    t2 = embaralhados.slice(qtd, qtd * 2);
+    bancoInicial = embaralhados.slice(qtd * 2);
+  }
+
+  // Já sorteia o próximo reserva do banco inicial
+  const { reserva, nextBanco, reservaCompleta } = buildReserva(bancoInicial, qtd, criterio);
+
+  const jogoCount = {}, winsCount = {};
+  presentes.forEach(j => { jogoCount[j.id] = 0; winsCount[j.id] = 0; });
+
+  pendingWinner = null;
+  currentDraw = { t1, t2, reserva, reservaCompleta, nextBanco, qtd, criterio, total: presentes.length, pausados: [], jogoCount, winsCount,
+    jogoId: jogoId || null,
+    jogoRef: jogoId ? appData.jogos.find(j => j.id === jogoId) : null
+  };
+  renderTimes();
+
+  document.getElementById('btn-sort').classList.add('sorteio-spin');
+  setTimeout(() => document.getElementById('btn-sort').classList.remove('sorteio-spin'), 500);
+  toast('Times sorteados!', 'info');
+}
+
+// Usuário clica em "Time X ganhou" — pede confirmação
+function selecionarGanhador(time) {
+  pendingWinner = time;
+  renderConfirmacaoGanhador();
+}
+
+function cancelarGanhador() {
+  pendingWinner = null;
+  renderGanhadorSection();
+}
+
+function toggleConfirmarBtn() {
+  const chk = document.getElementById('chk-confirmar');
+  const btn = document.getElementById('btn-confirmar-perdedor');
+  if (btn) btn.disabled = !chk.checked;
+}
+
+function confirmarGanhador() {
+  if (!pendingWinner || !currentDraw) return;
+
+  // Contabiliza jogos e vitórias ANTES da rotação
+  currentDraw.jogoCount = currentDraw.jogoCount || {};
+  currentDraw.winsCount = currentDraw.winsCount || {};
+  const timeGanhou = pendingWinner;
+  const timePerdeu = timeGanhou === 'A' ? 'B' : 'A';
+  const timeSai = timePerdeu; // o perdedor sai
+
+  [...currentDraw.t1, ...currentDraw.t2].forEach(j => {
+    currentDraw.jogoCount[j.id] = (currentDraw.jogoCount[j.id] || 0) + 1;
+  });
+  const vencedores = timeGanhou === 'A' ? currentDraw.t1 : currentDraw.t2;
+  vencedores.forEach(j => {
+    currentDraw.winsCount[j.id] = (currentDraw.winsCount[j.id] || 0) + 1;
+  });
+
+  const { t1, t2, reserva, reservaCompleta, nextBanco, qtd, criterio, total } = currentDraw;
+  const timeSaindo = timeSai === 'A' ? [...t1] : [...t2];
+  const timeFica   = timeSai === 'A' ? [...t2] : [...t1];
+
+  // Completa reserva parcial com jogadores do perdedor se necessário
+  let reservaFinal, restantePerdedor;
+  if (reservaCompleta) {
+    reservaFinal = [...reserva];
+    restantePerdedor = [...timeSaindo];
+  } else {
+    const needed = qtd - reserva.length;
+    const { drawn, remaining } = drawN(timeSaindo, needed, criterio);
+    reservaFinal = [...reserva, ...drawn];
+    restantePerdedor = remaining;
+  }
+
+  // Novo jogo: timeFica vs reservaFinal
+  const novoT1 = timeSai === 'A' ? reservaFinal : timeFica;
+  const novoT2 = timeSai === 'A' ? timeFica : reservaFinal;
+
+  // Próximo reserva: fila de espera tem prioridade
+  let novaReserva, novaFila;
+  if (nextBanco.length >= qtd) {
+    const { drawn: r, remaining: sobranFila } = drawN(nextBanco, qtd, criterio);
+    novaReserva = r;
+    novaFila = [...sobranFila, ...restantePerdedor];
+  } else {
+    const fromFila = [...nextBanco];
+    const needed2 = qtd - fromFila.length;
+    const { drawn: fromPerd, remaining: sobranPerd } = drawN(restantePerdedor, needed2, criterio);
+    novaReserva = [...fromFila, ...fromPerd];
+    novaFila = sobranPerd;
+  }
+
+  const novaReservaCompleta = novaReserva.length >= qtd;
+
+  pendingWinner = null;
+  currentDraw = {
+    t1: novoT1, t2: novoT2,
+    reserva: novaReserva, reservaCompleta: novaReservaCompleta,
+    nextBanco: novaFila, qtd, criterio, total,
+    pausados: currentDraw.pausados || [],
+    jogoCount: currentDraw.jogoCount,
+    winsCount: currentDraw.winsCount
+  };
+  renderTimes(`Time ${timeGanhou} 🏆 venceu!`);
+
+  document.getElementById('btn-sort').classList.add('sorteio-spin');
+  setTimeout(() => document.getElementById('btn-sort').classList.remove('sorteio-spin'), 500);
+  toast(`Time ${timeGanhou} venceu — próxima rodada pronta!`, 'success');
+}
+
+// ── Render helpers ──
+
+function atualizarSorteio() {
+  if (!currentDraw) return;
+  const { t1, t2, reserva, nextBanco, pausados, qtd, criterio, jogoId } = currentDraw;
+
+  // Todos os IDs já presentes no sorteio
+  const allInDraw = new Set([
+    ...t1, ...t2, ...reserva, ...(nextBanco || []), ...(pausados || [])
+  ].map(j => j.id));
+
+  // Jogadores presentes no jogo de referência (ou todos ativos se sem referência)
+  let presentePlayers;
+  if (jogoId) {
+    const jogo = appData.jogos.find(j => j.id === jogoId);
+    if (!jogo) { toast('Jogo de referência não encontrado.', 'error'); return; }
+    presentePlayers = appData.jogadores.filter(j => j.ativo !== false && jogo.presencas[j.id]);
+  } else {
+    presentePlayers = appData.jogadores.filter(j => j.ativo !== false);
+  }
+
+  // Novos jogadores: presentes no jogo mas não no sorteio
+  const novos = presentePlayers.filter(j => !allInDraw.has(j.id));
+
+  if (novos.length === 0) {
+    toast('Nenhum novo jogador encontrado para adicionar.', 'info');
+    return;
+  }
+
+  // Adiciona novos à fila de espera
+  currentDraw.nextBanco = [...(currentDraw.nextBanco || []), ...novos];
+  currentDraw.total += novos.length;
+
+  // Se o Próximo Time ainda não está completo, sorteia da fila para completar
+  if (currentDraw.reserva.length < qtd && currentDraw.nextBanco.length > 0) {
+    const needed = qtd - currentDraw.reserva.length;
+    const { drawn, remaining } = drawN(currentDraw.nextBanco, needed, criterio);
+    currentDraw.reserva = [...currentDraw.reserva, ...drawn];
+    currentDraw.nextBanco = remaining;
+    currentDraw.reservaCompleta = currentDraw.reserva.length >= qtd;
+    toast(`${novos.length} novo(s) adicionado(s) — ${drawn.length} foram para o Próximo Time.`, 'success');
+  } else {
+    toast(`${novos.length} novo(s) jogador(es) adicionado(s) à Fila de Espera.`, 'success');
+  }
+
+  renderTimes();
+}
+
+function playerRow(j, removivel, source) {
+  return `<div class="team-player">
+    <span style="font-weight:700">${j.nome}</span>
+    <div style="display:flex;align-items:center;gap:4px">
+      ${j.posicao ? `<span class="player-pos-tag">${j.posicao}</span>` : ''}
+      ${removivel ? `<button class="fila-remove-btn" onclick="solicitarPausar('${j.id}','${source}')" title="Pausar jogador">×</button>` : ''}
+    </div>
+  </div>`;
+}
+
+function renderConfirmacaoGanhador() {
+  const sec = document.getElementById('perdeu-section');
+  if (!sec || !pendingWinner) return;
+  const isA = pendingWinner === 'A';
+  const cor = isA ? 'var(--blue)' : 'var(--accent2)';
+  const emoji = isA ? '🔵' : '🔴';
+  sec.innerHTML = `
+    <div class="conf-perdedor" style="border-color:rgba(16,185,129,0.3);background:rgba(16,185,129,0.06)">
+      <div class="conf-perdedor-titulo" style="color:var(--accent3)">🏆 Confirmar vencedor</div>
+      <div class="conf-perdedor-badge" style="background:${isA ? 'rgba(59,130,246,0.12)' : 'rgba(239,68,68,0.12)'};color:${cor}">
+        ${emoji} Time ${pendingWinner} ganhou o jogo
+      </div>
+      <label class="conf-check-wrap" for="chk-confirmar">
+        <input type="checkbox" id="chk-confirmar" onchange="toggleConfirmarBtn()">
+        <span>Confirmo que o Time ${pendingWinner} ganhou</span>
+      </label>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost btn-full" onclick="cancelarGanhador()">Cancelar</button>
+        <button class="btn btn-success btn-full" id="btn-confirmar-perdedor" disabled onclick="confirmarGanhador()">🏆 Confirmar</button>
+      </div>
+    </div>`;
+}
+
+function renderGanhadorSection() {
+  const sec = document.getElementById('perdeu-section');
+  if (!sec) return;
+  sec.innerHTML = `
+    <div class="perdeu-label">🏆 Quem ganhou o jogo?</div>
+    <div class="perdeu-btns">
+      <button class="btn btn-blue btn-full" onclick="selecionarGanhador('A')">🔵 Time A ganhou</button>
+      <button class="btn btn-full" style="background:var(--accent2);color:#fff" onclick="selecionarGanhador('B')">🔴 Time B ganhou</button>
+    </div>`;
+}
+
+function renderTimes(timeSaiuLabel) {
+  const res = document.getElementById('sort-result');
+  if (!currentDraw) return;
+  const { t1, t2, reserva, reservaCompleta, nextBanco, qtd, total } = currentDraw;
+
+  // Cabeçalho: jogo de referência
+  const jogoRefHtml = currentDraw.jogoRef
+    ? `<div style="display:flex;align-items:center;gap:8px;padding:8px 12px;background:var(--surface2);border-radius:8px;margin-bottom:12px;font-size:13px">
+        <span style="font-size:16px">📋</span>
+        <div>
+          <span style="font-weight:700;color:var(--text)">Jogo de referência:</span>
+          <span style="color:var(--accent);font-weight:700"> ${formatDate(currentDraw.jogoRef.data)}</span>
+          <span style="color:var(--muted)"> — ${formatMes(currentDraw.jogoRef.competencia)}${currentDraw.jogoRef.obs ? ' · '+currentDraw.jogoRef.obs : ''}</span>
+        </div>
+      </div>`
+    : `<div style="padding:6px 12px;background:var(--surface2);border-radius:8px;margin-bottom:12px;font-size:12px;color:var(--muted)">
+        📋 Sem jogo de referência — usando todos os jogadores ativos
+      </div>`;
+
+  const destaqueHtml = timeSaiuLabel ? `
+    <div style="text-align:center;padding:8px;background:rgba(59,130,246,0.1);border-radius:8px;margin-bottom:12px;font-size:13px;font-weight:700;color:var(--blue)">
+      🔄 ${timeSaiuLabel} substituído — nova rodada!
+    </div>` : '';
+
+  // Card do próximo time (reserva)
+  let reservaHtml = '';
+  if (reserva.length > 0) {
+    const needed = qtd - reserva.length;
+    reservaHtml = `
+      <div class="team-card" style="border-color:var(--accent3);background:rgba(16,185,129,0.06);margin-top:12px;grid-column:1/-1">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:6px;margin-bottom:8px">
+          <div class="team-name" style="color:var(--accent3);margin-bottom:0">⏭️ Próximo Time</div>
+          ${reservaCompleta
+            ? `<span class="badge badge-green">Pronto ✓</span>`
+            : `<span class="badge badge-yellow">+${needed} do perdedor</span>`}
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:0 10px">
+          ${reserva.map(j => playerRow(j, true, 'reserva')).join('')}
+        </div>
+        ${!reservaCompleta ? `<div style="margin-top:8px;padding:7px 10px;background:rgba(245,158,11,0.08);border-radius:7px;font-size:12px;color:var(--accent);font-weight:700;border:1px dashed rgba(245,158,11,0.3)">
+          ⚠️ Faltam ${needed} jogador(es) — serão sorteados do perdedor ao confirmar abaixo.
+        </div>` : ''}
+      </div>`;
+  }
+
+  // Fila de espera com botão pausar
+  let filaHtml = '';
+  if (nextBanco && nextBanco.length > 0) {
+    filaHtml = `
+      <div class="banco-card" style="margin-top:10px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:var(--muted)">📋 Fila de Espera (${nextBanco.length})</div>
+          <span style="font-size:10px;color:var(--muted)">× para pausar</span>
+        </div>
+        <div class="banco-players">
+          ${nextBanco.map(j => `<span class="banco-player-chip" style="display:inline-flex;align-items:center;gap:2px">${j.nome}${j.posicao ? ' · <span style="opacity:.65;font-size:11px">' + j.posicao + '</span>' : ''}<button class="fila-remove-btn" onclick="solicitarPausar('${j.id}','fila')" title="Pausar jogador">×</button></span>`).join('')}
+        </div>
+      </div>`;
+  }
+
+  // Jogadores pausados
+  const pausados = currentDraw.pausados || [];
+  let pausadosHtml = '';
+  if (pausados.length > 0) {
+    pausadosHtml = `
+      <div style="margin-top:10px;padding:12px;background:rgba(239,68,68,0.05);border:1.5px dashed rgba(239,68,68,0.25);border-radius:10px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:14px;color:var(--accent2)">⏸️ Pausados (${pausados.length})</div>
+          <span style="font-size:10px;color:var(--muted)">▶ para retornar</span>
+        </div>
+        <div class="banco-players">
+          ${pausados.map(j => `<span class="banco-player-chip" style="display:inline-flex;align-items:center;gap:4px;border-color:rgba(239,68,68,0.25)">${j.nome}${j.posicao ? ' · <span style="opacity:.65;font-size:11px">' + j.posicao + '</span>' : ''}<button class="fila-remove-btn" style="background:rgba(16,185,129,0.2);color:var(--accent3);font-size:13px" onclick="solicitarRetornar('${j.id}')" title="Retornar ao jogo">▶</button></span>`).join('')}
+        </div>
+      </div>`;
+  }
+
+  res.innerHTML = `
+    <div class="card">
+      <div class="flex-between" style="margin-bottom:8px">
+        <div class="card-title" style="margin-bottom:0">🏆 Times Sorteados</div>
+        <span class="badge badge-yellow">${total} presentes</span>
+      </div>
+      ${jogoRefHtml}
+      ${destaqueHtml}
+      <div class="team-display">
+        <div class="team-card team-a">
+          <div class="team-name">🔵 Time A</div>
+          ${t1.map(j => playerRow(j)).join('')}
+        </div>
+        <div class="team-card team-b">
+          <div class="team-name">🔴 Time B</div>
+          ${t2.map(j => playerRow(j)).join('')}
+        </div>
+        ${reservaHtml}
+      </div>
+      ${filaHtml}
+      ${pausadosHtml}
+      <div id="perdeu-section" style="margin-top:14px"></div>
+      <hr class="divider">
+      <button class="btn btn-ghost btn-full" onclick="atualizarSorteio()" style="margin-top:4px">
+        🔄 Atualizar — verificar novos presentes
+      </button>
+    </div>
+  `;
+
+  // Renderiza seção de perdeu (botões ou confirmação)
+  if (pendingWinner) {
+    renderConfirmacaoGanhador();
+  } else {
+    renderGanhadorSection();
+  }
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// ===================== PAUSAR / RETORNAR JOGADORES =====================
+let pendingAcaoSorteio = null; // { type:'pausar'|'retornar', jogId, source:'fila'|'reserva' }
+
+function solicitarPausar(jogId, source) {
+  if (!currentDraw) return;
+  const pool = source === 'fila' ? currentDraw.nextBanco : currentDraw.reserva;
+  const player = pool.find(j => j.id === jogId);
+  if (!player) return;
+  pendingAcaoSorteio = { type: 'pausar', jogId, source, nome: player.nome };
+
+  document.getElementById('sort-acao-icon').textContent = '⏸️';
+  document.getElementById('sort-acao-titulo').textContent = 'Pausar Jogador';
+  document.getElementById('sort-acao-desc').textContent =
+    `Remover ${player.nome} da ${source === 'fila' ? 'fila de espera' : 'reserva'}? O jogador ficará na lista de pausados e pode retornar a qualquer momento.`;
+  const btn = document.getElementById('sort-acao-btn');
+  btn.className = 'btn btn-danger btn-full';
+  btn.textContent = '⏸️ Pausar';
+  document.getElementById('modal-sorteio-acao').classList.add('open');
+}
+
+function solicitarRetornar(jogId) {
+  if (!currentDraw) return;
+  const player = (currentDraw.pausados || []).find(j => j.id === jogId);
+  if (!player) return;
+  pendingAcaoSorteio = { type: 'retornar', jogId, nome: player.nome };
+
+  const destino = currentDraw.reserva.length < currentDraw.qtd ? 'time reserva' : 'fila de espera';
+  document.getElementById('sort-acao-icon').textContent = '▶️';
+  document.getElementById('sort-acao-titulo').textContent = 'Retornar ao Jogo';
+  document.getElementById('sort-acao-desc').textContent =
+    `Retornar ${player.nome} ao jogo? O jogador será adicionado ao ${destino}.`;
+  const btn = document.getElementById('sort-acao-btn');
+  btn.className = 'btn btn-success btn-full';
+  btn.textContent = '▶️ Retornar';
+  document.getElementById('modal-sorteio-acao').classList.add('open');
+}
+
+function executarAcaoSorteio() {
+  if (!pendingAcaoSorteio || !currentDraw) return;
+  const { type, jogId, source } = pendingAcaoSorteio;
+
+  if (type === 'pausar') {
+    let player;
+    if (source === 'fila') {
+      player = currentDraw.nextBanco.find(j => j.id === jogId);
+      currentDraw.nextBanco = currentDraw.nextBanco.filter(j => j.id !== jogId);
+    } else {
+      player = currentDraw.reserva.find(j => j.id === jogId);
+      currentDraw.reserva = currentDraw.reserva.filter(j => j.id !== jogId);
+      currentDraw.reservaCompleta = currentDraw.reserva.length >= currentDraw.qtd;
+    }
+    if (player) {
+      currentDraw.pausados = [...(currentDraw.pausados || []), player];
+      toast(`${player.nome} pausado.`, 'info');
+    }
+  } else if (type === 'retornar') {
+    const player = (currentDraw.pausados || []).find(j => j.id === jogId);
+    currentDraw.pausados = currentDraw.pausados.filter(j => j.id !== jogId);
+    if (player) {
+      if (currentDraw.reserva.length < currentDraw.qtd) {
+        currentDraw.reserva = [...currentDraw.reserva, player];
+        currentDraw.reservaCompleta = currentDraw.reserva.length >= currentDraw.qtd;
+        toast(`${player.nome} voltou para a reserva.`, 'success');
+      } else {
+        currentDraw.nextBanco = [...currentDraw.nextBanco, player];
+        toast(`${player.nome} voltou para a fila de espera.`, 'success');
+      }
+    }
+  }
+
+  fecharModal('modal-sorteio-acao');
+  pendingAcaoSorteio = null;
+  renderTimes();
+}
+
+function toggleHistorico(id) {
+  resumoJogoExpandido = resumoJogoExpandido === id ? null : id;
+  renderClassificacao();
+}
+
+// ===================== PLACAR =====================
+let placar = {
+  a: 0, b: 0,
+  setA: 0, setB: 0,
+  periodo: 1,
+  modo: 'cronometro',
+  timerMins: 25,
+  elapsed: 0,
+  running: false,
+  intervalId: null
+};
+
+function placarTimerDisplay() {
+  let secs = placar.modo === 'cronometro'
+    ? placar.elapsed
+    : Math.max(0, placar.timerMins * 60 - placar.elapsed);
+  const m = Math.floor(secs / 60), s = secs % 60;
+  return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+}
+
+function playBeeps() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const total = 15, interval = 0.6;
+    const count = Math.floor(total / interval);
+    for (let i = 0; i < count; i++) {
+      const t = ctx.currentTime + i * interval;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain); gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.value = i % 3 === 0 ? 1046 : 880;
+      gain.gain.setValueAtTime(0.4, t);
+      gain.gain.exponentialRampToValueAtTime(0.001, t + 0.25);
+      osc.start(t); osc.stop(t + 0.25);
+    }
+  } catch(e) { console.warn('Audio não disponível', e); }
+}
+
+function toggleCrono() {
+  if (placar.running) {
+    clearInterval(placar.intervalId); placar.intervalId = null; placar.running = false;
+  } else {
+    placar.running = true;
+    placar.intervalId = setInterval(() => {
+      placar.elapsed++;
+      const el = document.getElementById('timer-display');
+      if (el) el.textContent = placarTimerDisplay();
+      if (placar.modo === 'timer' && placar.elapsed >= placar.timerMins * 60) {
+        clearInterval(placar.intervalId); placar.intervalId = null; placar.running = false;
+        const el2 = document.getElementById('timer-display');
+        if (el2) el2.classList.add('finished');
+        const btn = document.getElementById('btn-crono-toggle');
+        if (btn) { btn.textContent = '▶ Iniciar'; btn.className = 'btn btn-success'; }
+        toast('⏰ Tempo esgotado!', 'info');
+        playBeeps();
+        return;
+      }
+      const btn = document.getElementById('btn-crono-toggle');
+      if (btn && !placar.running) { btn.textContent = '▶ Iniciar'; btn.className = 'btn btn-success'; }
+    }, 1000);
+  }
+  const btn = document.getElementById('btn-crono-toggle');
+  if (btn) { btn.textContent = placar.running ? '⏸ Pausar' : '▶ Iniciar'; btn.className = placar.running ? 'btn btn-danger' : 'btn btn-success'; }
+}
+
+function resetCrono() {
+  if (placar.intervalId) { clearInterval(placar.intervalId); placar.intervalId = null; }
+  placar.running = false; placar.elapsed = 0;
+  const el = document.getElementById('timer-display');
+  if (el) { el.textContent = placarTimerDisplay(); el.classList.remove('finished'); }
+  const btn = document.getElementById('btn-crono-toggle');
+  if (btn) { btn.textContent = '▶ Iniciar'; btn.className = 'btn btn-success'; }
+}
+
+function setModo(modo) {
+  if (placar.intervalId) { clearInterval(placar.intervalId); placar.intervalId = null; }
+  placar.running = false; placar.elapsed = 0; placar.modo = modo;
+  renderPlacar();
+}
+
+function addPlacar(time, val) {
+  placar[time] = Math.max(0, placar[time] + val);
+  const el = document.getElementById('score-' + time);
+  if (el) el.textContent = placar[time];
+}
+
+function addSet(team, val) {
+  const key = 'set' + team.toUpperCase();
+  placar[key] = Math.min(9, Math.max(0, placar[key] + val));
+  const el = document.getElementById('set-' + team);
+  if (el) el.textContent = placar[key];
+}
+
+function setPeriodo(p) {
+  placar.periodo = p;
+  document.querySelectorAll('.periodo-btn').forEach(b => {
+    b.classList.toggle('active', parseInt(b.dataset.p) === p);
+  });
+}
+
+function resetPlacar() {
+  if (!confirm('Resetar o placar completamente?')) return;
+  if (placar.intervalId) { clearInterval(placar.intervalId); placar.intervalId = null; }
+  const modo = placar.modo, mins = placar.timerMins;
+  placar = { a:0, b:0, setA:0, setB:0, periodo:1, modo, timerMins:mins, elapsed:0, running:false, intervalId:null };
+  renderPlacar();
+}
+
+function renderPlacar() {
+  const isTimer = placar.modo === 'timer';
+  document.getElementById('placar-content').innerHTML = `
+    <div class="card">
+      <div class="card-title">🏆 Placar</div>
+
+      <!-- Modo Cronômetro / Timer -->
+      <div class="inner-tabs" style="margin-bottom:12px">
+        <button class="inner-tab ${!isTimer?'active':''}" onclick="setModo('cronometro')">⏱ Cronômetro</button>
+        <button class="inner-tab ${isTimer?'active':''}" onclick="setModo('timer')">⏲ Timer</button>
+      </div>
+
+      ${isTimer ? `
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;background:var(--surface2);border-radius:8px;padding:10px 14px">
+        <span style="font-size:12px;color:var(--muted);font-weight:700">Duração:</span>
+        <input type="number" min="1" max="99" value="${placar.timerMins}"
+          onchange="placar.timerMins=Math.max(1,parseInt(this.value)||1);resetCrono()"
+          style="width:64px;text-align:center;font-size:16px;font-weight:900;padding:6px">
+        <span style="font-size:12px;color:var(--muted);font-weight:700">minutos</span>
+      </div>` : ''}
+
+      <!-- Display do tempo -->
+      <div style="text-align:center;padding:10px 0 14px">
+        <div id="timer-display" class="placar-timer-display">${placarTimerDisplay()}</div>
+        <div style="display:flex;gap:8px;justify-content:center;margin-top:10px">
+          <button id="btn-crono-toggle" class="btn btn-success" onclick="toggleCrono()" style="min-width:130px">▶ Iniciar</button>
+          <button class="btn btn-ghost" onclick="resetCrono()">↺ Zerar</button>
+        </div>
+      </div>
+
+      <hr class="divider">
+
+      <!-- Scoreboard: Período | Time A | VS+SET | Time B -->
+      <div class="placar-grid" style="display:grid;grid-template-columns:44px 1fr auto 1fr;gap:10px;align-items:start;margin:12px 0">
+
+        <!-- Período -->
+        <div style="display:flex;flex-direction:column;gap:4px;align-items:center">
+          <div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;margin-bottom:2px">Per.</div>
+          ${[1,2,3,4].map(p => `
+            <button class="periodo-btn ${placar.periodo===p?'active':''}" data-p="${p}" onclick="setPeriodo(${p})">${p}º</button>
+          `).join('')}
+        </div>
+
+        <!-- Time A -->
+        <div class="placar-time">
+          <div class="placar-time-nome" style="color:var(--blue)">🔵 Time A</div>
+          <div id="score-a" class="placar-score" style="color:var(--blue)">${placar.a}</div>
+          <div class="placar-btns">
+            <button class="btn btn-ghost" onclick="addPlacar('a',-1)" style="font-size:20px;padding:7px 13px">−</button>
+            <button class="btn btn-blue" onclick="addPlacar('a',1)" style="font-size:20px;padding:7px 13px">+</button>
+          </div>
+          <div style="margin-top:10px">
+            <div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">SET</div>
+            <div style="display:flex;align-items:center;justify-content:center;gap:4px">
+              <button class="btn btn-ghost btn-sm" onclick="addSet('a',-1)" style="padding:3px 8px;font-size:14px">−</button>
+              <div id="set-a" style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--blue);min-width:22px;text-align:center">${placar.setA}</div>
+              <button class="btn btn-ghost btn-sm" onclick="addSet('a',1)" style="padding:3px 8px;font-size:14px">+</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Centro: VS centralizado com os scores -->
+        <div style="display:flex;align-items:center;justify-content:center;padding-top:28px">
+          <div class="placar-vs">VS</div>
+        </div>
+
+        <!-- Time B -->
+        <div class="placar-time">
+          <div class="placar-time-nome" style="color:var(--accent2)">🔴 Time B</div>
+          <div id="score-b" class="placar-score" style="color:var(--accent2)">${placar.b}</div>
+          <div class="placar-btns">
+            <button class="btn btn-ghost" onclick="addPlacar('b',-1)" style="font-size:20px;padding:7px 13px">−</button>
+            <button class="btn btn-danger" onclick="addPlacar('b',1)" style="font-size:20px;padding:7px 13px">+</button>
+          </div>
+          <div style="margin-top:10px">
+            <div style="font-size:9px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:4px">SET</div>
+            <div style="display:flex;align-items:center;justify-content:center;gap:4px">
+              <button class="btn btn-ghost btn-sm" onclick="addSet('b',-1)" style="padding:3px 8px;font-size:14px">−</button>
+              <div id="set-b" style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--accent2);min-width:22px;text-align:center">${placar.setB}</div>
+              <button class="btn btn-ghost btn-sm" onclick="addSet('b',1)" style="padding:3px 8px;font-size:14px">+</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <hr class="divider">
+      <button class="btn btn-ghost btn-full" onclick="resetPlacar()">↺ Resetar Tudo</button>
+    </div>
+
+    ${currentDraw ? `
+      <div class="card">
+        <div class="card-title" style="font-size:15px;margin-bottom:10px">👟 Em Quadra</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div>
+            <div style="font-size:12px;color:var(--blue);font-weight:700;margin-bottom:6px">🔵 Time A</div>
+            ${currentDraw.t1.map(j => `<div style="padding:3px 0;font-size:13px;font-weight:700">${j.nome}${j.posicao?`<span style="color:var(--muted);font-size:10px"> · ${j.posicao}</span>`:''}</div>`).join('')}
+          </div>
+          <div>
+            <div style="font-size:12px;color:var(--accent2);font-weight:700;margin-bottom:6px">🔴 Time B</div>
+            ${currentDraw.t2.map(j => `<div style="padding:3px 0;font-size:13px;font-weight:700">${j.nome}${j.posicao?`<span style="color:var(--muted);font-size:10px"> · ${j.posicao}</span>`:''}</div>`).join('')}
+          </div>
+        </div>
+      </div>
+    ` : '<div class="empty"><div class="empty-icon">🏐</div><div>Faça um sorteio para ver os times em quadra</div></div>'}
+  `;
+}
+
+// ===================== CLASSIFICAÇÃO =====================
+function renderClassificacao() {
+  const jogosFiltrados = appData.jogos.filter(j => {
+    if (!j.encerrado) return false;
+    if (rankFiltroInicio && j.data < rankFiltroInicio) return false;
+    if (rankFiltroFim   && j.data > rankFiltroFim)   return false;
+    return true;
+  });
+
+  const winsMap = {}, lossesMap = {}, gamesMap = {}, presencaMap = {};
+  appData.jogadores.forEach(j => { winsMap[j.id]=0; lossesMap[j.id]=0; gamesMap[j.id]=0; presencaMap[j.id]=0; });
+  jogosFiltrados.forEach(jogo => {
+    Object.entries(jogo.winsCount || {}).forEach(([id, w]) => {
+      if (winsMap[id]!==undefined) winsMap[id] += w;
+    });
+    Object.entries(jogo.jogoCount || {}).forEach(([id, g]) => {
+      if (gamesMap[id]!==undefined) {
+        gamesMap[id] += g;
+        lossesMap[id] += (g - ((jogo.winsCount||{})[id]||0));
+      }
+    });
+    Object.entries(jogo.presencas || {}).forEach(([id, p]) => {
+      if (p && presencaMap[id]!==undefined) presencaMap[id]++;
+    });
+  });
+
+  const rawRanking = appData.jogadores.map(j => ({
+    ...j, wins: winsMap[j.id]||0, losses: lossesMap[j.id]||0,
+    games: gamesMap[j.id]||0, presencas: presencaMap[j.id]||0
+  })).sort((a,b) => b.wins - a.wins || a.losses - b.losses);
+
+  const ranking = calcPositions(rawRanking);
+  const posColor = p => p===1?'var(--accent)':p===2?'#94a3b8':p===3?'#cd7c2f':'var(--muted)';
+
+  document.getElementById('classificacao-content').innerHTML = `
+    <div class="card">
+      <div class="card-title">🥇 Classificação</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+        <div class="form-group" style="margin:0">
+          <label>De</label>
+          <input type="date" value="${rankFiltroInicio}" onchange="rankFiltroInicio=this.value;renderClassificacao()" style="font-size:12px;padding:7px 10px">
+        </div>
+        <div class="form-group" style="margin:0">
+          <label>Até</label>
+          <input type="date" value="${rankFiltroFim}" onchange="rankFiltroFim=this.value;renderClassificacao()" style="font-size:12px;padding:7px 10px">
+        </div>
+      </div>
+      ${rankFiltroInicio || rankFiltroFim ? `<div style="text-align:right;margin-bottom:8px"><button class="btn btn-ghost btn-sm" onclick="rankFiltroInicio='';rankFiltroFim='';renderClassificacao()">✕ Limpar filtro</button></div>` : ''}
+      ${ranking.length ? `
+        <div class="rank-header">
+          <div style="width:36px"></div>
+          <div style="flex:1;font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px">Jogador</div>
+          <div class="rank-header-lbl" style="color:var(--accent3)">V</div>
+          <div class="rank-header-lbl" style="color:var(--accent2)">D</div>
+          <div class="rank-header-lbl" style="color:var(--accent)">J</div>
+        </div>
+        ${ranking.map(j => `
+          <div class="list-item" style="gap:10px">
+            <div class="rank-pos-num" style="color:${posColor(j.pos)}">${j.pos}º</div>
+            <div class="list-item-info">
+              <div class="list-item-name">${j.nome}</div>
+              <div class="list-item-sub">${j.posicao||'—'} · ${j.presencas} presença(s)</div>
+            </div>
+            <div class="rank-stats">
+              <div class="rank-stat"><div class="rank-stat-num" style="color:var(--accent3)">${j.wins}</div><div class="rank-stat-lbl">Vitórias</div></div>
+              <div class="rank-stat"><div class="rank-stat-num" style="color:var(--accent2)">${j.losses}</div><div class="rank-stat-lbl">Derrotas</div></div>
+              <div class="rank-stat"><div class="rank-stat-num" style="color:var(--accent)">${j.games}</div><div class="rank-stat-lbl">Jogos</div></div>
+            </div>
+          </div>
+        `).join('')}
+      ` : '<div class="empty"><div>Sem dados de jogos encerrados no período</div></div>'}
+    </div>
+
+    <div class="card">
+      <div class="card-title">📅 Histórico de Jogos</div>
+      ${(() => {
+        const encerrados = [...appData.jogos].filter(j => j.encerrado).sort((a,b) => b.data.localeCompare(a.data));
+        if (!encerrados.length) return '<div class="empty"><div>Nenhum jogo encerrado ainda</div></div>';
+        return encerrados.map(j => {
+          const presentesJogs = appData.jogadores.filter(jg => j.presencas[jg.id]);
+          const expanded = resumoJogoExpandido === j.id;
+          const histRanking = calcPositions(
+            presentesJogs.map(jg => {
+              const w = (j.winsCount||{})[jg.id]||0, g = (j.jogoCount||{})[jg.id]||0;
+              return { ...jg, wins:w, losses:g-w, games:g };
+            }).sort((a,b) => b.wins-a.wins || a.losses-b.losses)
+          );
+          const listaHtml = expanded ? `
+            <div class="hist-presenca-lista">
+              <div class="rank-header" style="padding:2px 8px 4px">
+                <div style="width:28px"></div>
+                <div style="flex:1;font-size:10px;color:var(--muted);font-weight:700;text-transform:uppercase">Jogador</div>
+                <div class="rank-header-lbl" style="color:var(--accent3)">V</div>
+                <div class="rank-header-lbl" style="color:var(--accent2)">D</div>
+                <div class="rank-header-lbl" style="color:var(--accent)">J</div>
+              </div>
+              ${histRanking.map(jg => `
+                <div style="display:flex;align-items:center;gap:10px;padding:5px 8px;border-radius:6px;background:rgba(16,185,129,0.05);margin-bottom:3px">
+                  <div class="rank-pos-num" style="font-size:16px;width:28px;color:${['var(--accent)','#94a3b8','#cd7c2f'][jg.pos-1]||'var(--muted)'}">${jg.pos}º</div>
+                  <div style="flex:1">
+                    <div style="font-size:13px;font-weight:700">${jg.nome}</div>
+                    ${jg.posicao ? `<div style="font-size:10px;color:var(--muted)">${jg.posicao}</div>` : ''}
+                  </div>
+                  <div class="rank-stats">
+                    <div class="rank-stat"><div class="rank-stat-num" style="color:var(--accent3);font-size:17px">${jg.wins}</div><div class="rank-stat-lbl">V</div></div>
+                    <div class="rank-stat"><div class="rank-stat-num" style="color:var(--accent2);font-size:17px">${jg.losses}</div><div class="rank-stat-lbl">D</div></div>
+                    <div class="rank-stat"><div class="rank-stat-num" style="color:var(--accent);font-size:17px">${jg.games}</div><div class="rank-stat-lbl">J</div></div>
+                  </div>
+                </div>`).join('')}
+            </div>` : '';
+          return `
+            <div class="hist-item" onclick="toggleHistorico('${j.id}')">
+              <div class="hist-item-header">
+                <div class="list-item-info">
+                  <div class="list-item-name">${formatDate(j.data)}</div>
+                  <div class="list-item-sub">${j.obs||'Sem observação'} · Comp: ${formatMes(j.competencia)}</div>
+                </div>
+                <span class="badge badge-encerrado">🏁 Encerrado</span>
+                <span class="badge badge-blue">${presentesJogs.length} presentes</span>
+                <span style="color:var(--muted);font-size:14px">${expanded?'▲':'▼'}</span>
+              </div>
+              ${listaHtml}
+            </div>`;
+        }).join('');
+      })()}
+    </div>
+  `;
+}
+
+// ===================== RESUMO =====================
+let resumoConfirmadosAberto = false;
+let resumoPendentesAberto   = false;
+
+function toggleResumoConfirmados() { resumoConfirmadosAberto = !resumoConfirmadosAberto; renderResumo(); }
+function toggleResumoPendentes()   { resumoPendentesAberto   = !resumoPendentesAberto;   renderResumo(); }
+
+function renderResumo() {
+  const totalReceitas = appData.financeiro.filter(f => f.tipo.startsWith('receita')).reduce((s,f) => s+f.valor, 0);
+  const totalCustos   = appData.financeiro.filter(f => f.tipo === 'custo').reduce((s,f) => s+f.valor, 0);
+  const saldo = totalReceitas - totalCustos;
+
+  // Próximo jogo
+  const hoje = new Date().toISOString().split('T')[0];
+  const jogosAtivos = appData.jogos.filter(j => !j.encerrado).sort((a,b) => a.data.localeCompare(b.data));
+  const proximo = jogosAtivos.find(j => j.data >= hoje) || jogosAtivos[jogosAtivos.length - 1];
+  const jogadoresNoJogo = proximo
+    ? appData.jogadores.filter(j => j.ativo !== false && j.id in (proximo.presencas || {}))
+    : [];
+  const confirmados = jogadoresNoJogo
+    .filter(j => proximo?.presencas?.[j.id])
+    .sort((a,b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+
+  // Pagamentos pendentes, ordem alfabética
+  const pendentes = appData.financeiro
+    .filter(f => f.tipo.startsWith('receita') && f.status !== 'ok')
+    .sort((a,b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+
+  const tipoLabel = { 'receita-mensalidade': 'Mensalidade', 'receita-avulso': 'Avulso' };
+  const tipoBadge = { 'receita-mensalidade': 'badge-green', 'receita-avulso': 'badge-blue' };
+
+  document.getElementById('resumo-content').innerHTML = `
+
+    <!-- 1. Próximo Jogo -->
+    <div class="card">
+      <div class="card-title">🗓️ Próximo Jogo</div>
+      ${proximo ? `
+        <div style="font-size:28px;font-family:'Bebas Neue',sans-serif;color:var(--accent);margin-bottom:6px">${formatDate(proximo.data)}</div>
+        <div style="font-size:13px;color:var(--muted);margin-bottom:12px">Comp: ${formatMes(proximo.competencia)}${proximo.obs ? ' · '+proximo.obs : ''}</div>
+        <span onclick="toggleResumoConfirmados()"
+          class="badge badge-yellow"
+          style="cursor:pointer;font-size:13px;padding:6px 14px;user-select:none"
+          title="${resumoConfirmadosAberto ? 'Fechar lista' : 'Ver confirmados'}">
+          ${confirmados.length} confirmado${confirmados.length !== 1 ? 's' : ''} ${resumoConfirmadosAberto ? '▲' : '▼'}
+        </span>
+        ${resumoConfirmadosAberto ? `
+          <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px">
+            ${confirmados.length === 0
+              ? '<div style="color:var(--muted);font-size:13px;padding:8px 0">Nenhum confirmado ainda.</div>'
+              : confirmados.map(j => `
+                <div style="display:flex;align-items:center;gap:8px;padding:6px 10px;background:var(--surface2);border-radius:8px;border:1px solid var(--border)">
+                  <div class="player-avatar" style="width:28px;height:28px;font-size:11px;background:var(--accent3)">${avatarInicial(j.nome)}</div>
+                  <span style="font-size:13px;font-weight:700">${j.nome}</span>
+                  ${j.posicao ? `<span style="font-size:11px;color:var(--muted)">${j.posicao}</span>` : ''}
+                </div>`).join('')}
+          </div>` : ''}
+      ` : '<div class="empty" style="padding:20px 0"><div>Nenhum jogo cadastrado</div></div>'}
+    </div>
+
+    <!-- 2. Pagamentos Pendentes -->
+    <div class="card">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:${pendentes.length > 0 ? '0' : '0'}">
+        <div class="card-title" style="margin-bottom:0">⏳ Pagamentos Pendentes</div>
+        ${pendentes.length > 0 ? `
+          <span onclick="toggleResumoPendentes()"
+            class="badge badge-yellow"
+            style="cursor:pointer;font-size:13px;padding:6px 14px;user-select:none"
+            title="${resumoPendentesAberto ? 'Fechar lista' : 'Ver pendentes'}">
+            ${pendentes.length} pendente${pendentes.length !== 1 ? 's' : ''} ${resumoPendentesAberto ? '▲' : '▼'}
+          </span>
+        ` : `<span class="badge badge-green" style="font-size:12px">✅ Em dia</span>`}
+      </div>
+      ${resumoPendentesAberto && pendentes.length > 0 ? `
+        <div style="margin-top:12px">
+          ${pendentes.map(f => `
+            <div class="list-item" style="padding:10px 12px">
+              <div class="list-item-info">
+                <div class="list-item-name" style="font-size:14px">${f.nome}</div>
+                <div class="list-item-sub">
+                  <span class="badge ${tipoBadge[f.tipo]}" style="font-size:10px">${tipoLabel[f.tipo]}</span>
+                  &nbsp;${formatMes(f.competencia)}
+                </div>
+              </div>
+              <div style="font-weight:900;font-size:15px;color:var(--accent3);white-space:nowrap">
+                +R$ ${formatBRL(f.valor)}
+              </div>
+            </div>
+          `).join('')}
+        </div>` : ''}
+    </div>
+
+    <!-- 3. Resumo Financeiro -->
+    <div class="card">
+      <div class="card-title">💰 Resumo Financeiro</div>
+      <div class="summary-grid">
+        <div class="summary-card">
+          <div class="summary-value" style="color:var(--accent3)">R$ ${formatBRL(totalReceitas)}</div>
+          <div class="summary-label">Receitas</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-value" style="color:var(--accent2)">R$ ${formatBRL(totalCustos)}</div>
+          <div class="summary-label">Custos</div>
+        </div>
+        <div class="summary-card" style="grid-column:1/-1">
+          <div class="summary-value" style="color:${saldo>=0?'var(--accent3)':'var(--accent2)'}">R$ ${formatBRL(Math.abs(saldo))}</div>
+          <div class="summary-label">Saldo ${saldo>=0?'▲':'▼'}</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function atualizarHeaderGrupo() {
+  const el = document.getElementById('header-grupo-nome');
+  if (!el) return;
+  const nome = appData.config?.nomeGrupo?.trim();
+  el.textContent = nome ? nome : 'Gestão do seu grupo';
+}
+
+function toggleBloquearPresenca(val) {
+  appData.config.bloquearPresenca = val;
+  if (!val) appData.config.maxPresenca = 0;
+  save();
+  renderConfiguracao();
+}
+
+function renderConfiguracao() {
+  const cfg = appData.config || {};
+  document.getElementById('config-content').innerHTML = `
+
+    <!-- Nome do grupo -->
+    <div class="card">
+      <div class="card-title">⚙️ Configurações do Grupo</div>
+
+      <div class="form-group">
+        <label>Nome do Grupo</label>
+        <input type="text" id="cfg-nome" placeholder="Ex: Vôlei do Parque"
+          value="${(cfg.nomeGrupo || '').replace(/"/g,'&quot;')}"
+          oninput="appData.config.nomeGrupo=this.value;save();atualizarHeaderGrupo()">
+      </div>
+
+      <div class="form-group">
+        <label>Bloquear quantidade de presença no jogo</label>
+        <div style="display:flex;gap:10px;margin-top:6px">
+          <button class="btn ${cfg.bloquearPresenca ? 'btn-success' : 'btn-ghost'}"
+            onclick="toggleBloquearPresenca(true)" style="flex:1">✓ Sim</button>
+          <button class="btn ${!cfg.bloquearPresenca ? 'btn-primary' : 'btn-ghost'}"
+            onclick="toggleBloquearPresenca(false)" style="flex:1">✗ Não</button>
+        </div>
+      </div>
+
+      ${cfg.bloquearPresenca ? `
+      <div class="form-group">
+        <label>Número máximo de jogadores presentes</label>
+        <input type="number" id="cfg-max" min="1" max="99" placeholder="Digite o valor"
+          value="${cfg.maxPresenca || ''}"
+          onchange="appData.config.maxPresenca=Math.max(1,parseInt(this.value)||0);save()">
+        ${cfg.maxPresenca ? `<div style="font-size:12px;color:var(--accent);margin-top:4px;font-weight:700">Limite ativo: ${cfg.maxPresenca} jogadores por jogo</div>` : ''}
+      </div>
+      ` : ''}
+    </div>
+
+    <!-- Backup -->
+    <div class="card">
+      <div class="card-title">💾 Backup de Dados</div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:20px;line-height:1.6">
+        Exporte todos os seus dados para um arquivo JSON e leve para qualquer dispositivo.
+        Importe para restaurar um backup anterior ou limpe tudo para recomeçar.
+      </div>
+      <div style="display:flex;gap:12px;flex-direction:column">
+
+        <div>
+          <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Exportar</div>
+          <button class="btn btn-primary btn-full" onclick="exportarDados()" style="font-size:15px;padding:13px">
+            📤 Exportar Backup
+          </button>
+        </div>
+
+        <div>
+          <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Importar</div>
+          <label class="btn btn-ghost btn-full" style="cursor:pointer;justify-content:center;display:inline-flex;align-items:center;gap:8px;text-transform:none;font-size:15px;padding:13px">
+            📥 Importar Backup
+            <input type="file" accept=".json" onchange="importarDados(event)" style="display:none">
+          </label>
+          <div style="font-size:11px;color:var(--muted);margin-top:6px;padding:0 4px">
+            ⚠️ Os dados atuais serão substituídos pelo conteúdo do arquivo importado.
+          </div>
+        </div>
+
+        <hr class="divider">
+
+        <div>
+          <div style="font-size:11px;color:var(--accent2);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">Zona de Perigo</div>
+          <button class="btn btn-full" onclick="limparDados()"
+            style="background:rgba(239,68,68,0.1);color:var(--accent2);border:1.5px solid rgba(239,68,68,0.35);font-size:15px;padding:13px">
+            🗑 Limpar Todos os Dados
+          </button>
+          <div style="font-size:11px;color:var(--muted);margin-top:6px;padding:0 4px">
+            Remove permanentemente todos os jogadores, jogos e lançamentos financeiros.
+          </div>
+        </div>
+
+      </div>
+    </div>
+  `;
+}
+
+function limparDados() {
+  if (!confirm('⚠️ Atenção!\n\nEsta ação irá apagar TODOS os dados:\n• Jogadores\n• Jogos e presenças\n• Lançamentos financeiros\n\nEsta ação NÃO pode ser desfeita!\n\nDeseja continuar?')) return;
+  if (!confirm('Última confirmação: todos os dados serão permanentemente apagados. Confirmar?')) return;
+  appData = { financeiro: [], jogadores: [], jogos: [] };
+  save();
+  renderFinanceiro();
+  renderJogadores();
+  renderJogos();
+  renderSorteioSelect();
+  renderResumo();
+  currentDraw = null;
+  toast('Todos os dados foram apagados.', 'info');
+}
+
+function exportarDados() {
+  const json = JSON.stringify(appData, null, 2);
+  const blob = new Blob([json], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const dataHoje = new Date().toISOString().split('T')[0];
+  a.download = `volei-manager-backup-${dataHoje}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast('Backup exportado!', 'success');
+}
+
+function importarDados(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onerror = () => toast('Não foi possível ler o arquivo.', 'error');
+
+  reader.onload = (e) => {
+    // Parse — separado do confirm para não confundir erros
+    let parsed;
+    try {
+      // Remove BOM (UTF-8 Byte Order Mark) caso presente
+      const texto = (e.target.result || '').replace(/^\uFEFF/, '').trim();
+      parsed = JSON.parse(texto);
+    } catch (err) {
+      console.error('JSON.parse error:', err);
+      toast('Arquivo inválido — não é um JSON reconhecível.', 'error');
+      return;
+    }
+
+    // Validação leniente: aceita se tiver ao menos uma das chaves esperadas
+    if (!parsed || typeof parsed !== 'object') {
+      toast('Arquivo inválido — estrutura incorreta.', 'error');
+      return;
+    }
+
+    const financeiro = Array.isArray(parsed.financeiro) ? parsed.financeiro : [];
+    const jogadores  = Array.isArray(parsed.jogadores)  ? parsed.jogadores  : [];
+    const jogos      = Array.isArray(parsed.jogos)       ? parsed.jogos      : [];
+
+    if (financeiro.length === 0 && jogadores.length === 0 && jogos.length === 0) {
+      toast('Backup vazio ou formato não reconhecido.', 'error');
+      return;
+    }
+
+    // Confirmação fora do try para não mascarar erros
+    const ok = confirm(
+      'Importar backup?\n\n' +
+      jogadores.length + ' jogadores · ' +
+      jogos.length + ' jogos · ' +
+      financeiro.length + ' lançamentos\n\n' +
+      'Os dados atuais serão substituídos.'
+    );
+    if (!ok) return;
+
+    appData = { financeiro, jogadores, jogos };
+    save();
+    renderFinanceiro();
+    renderJogadores();
+    renderJogos();
+    renderSorteioSelect();
+    renderResumo();
+    toast('Dados importados com sucesso! (' + jogadores.length + ' jogadores, ' + financeiro.length + ' lançamentos)', 'success');
+  };
+
+  reader.readAsText(file, 'UTF-8');
+  event.target.value = '';
+}
+
+// ===================== UTILS =====================
+function calcPositions(arr) {
+  let pos = 1;
+  return arr.map((j, i) => {
+    if (i > 0) {
+      const p = arr[i-1];
+      if (j.wins !== p.wins || j.losses !== p.losses) pos = i + 1;
+    }
+    return { ...j, pos };
+  });
+}
+
+function avatarInicial(nome) {
+  if (!nome) return '?';
+  const partes = nome.trim().split(/\s+/).filter(Boolean);
+  if (partes.length === 1) {
+    const p = partes[0];
+    return isNaN(p[0]) ? p[0].toUpperCase() : p.slice(0, 2);
+  }
+  return (partes[0][0] + partes[partes.length - 1][0]).toUpperCase();
+}
+
+function formatBRL(valor) {
+  return Number(valor).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function formatDate(d) {
+  if (!d) return '';
+  const [y,m,day] = d.split('-');
+  return `${day}/${m}/${y}`;
+}
+function formatMes(m) {
+  if (!m) return '';
+  const [y,mo] = m.split('-');
+  const meses = ['Jan','Fev','Mar','Abr','Mai','Jun','Jul','Ago','Set','Out','Nov','Dez'];
+  return `${meses[parseInt(mo)-1]}/${y}`;
+}
+
+// ===================== INIT =====================
+const hoje = new Date().toISOString().split('T')[0];
+const mesAtual = hoje.slice(0,7);
+document.getElementById('fin-data').value = hoje;
+document.getElementById('fin-competencia').value = mesAtual;
+document.getElementById('jogo-data').value = hoje;
+document.getElementById('jogo-comp').value = mesAtual;
+
+renderFinanceiro();
+renderJogadores();
+renderJogos();
+renderSorteioSelect();
+renderResumo();
+atualizarDatalist();
+atualizarHeaderGrupo();
+</script>
+</body>
+</html>

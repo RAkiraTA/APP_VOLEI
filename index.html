@@ -107,24 +107,26 @@
     .sidebar {
       position: fixed;
       bottom: 0; left: 0; right: 0;
-      width: 100%; height: auto; min-height: 58px;
+      width: 100%; height: auto; min-height: 52px;
       flex-direction: row; border-right: none;
       border-top: 2px solid var(--border);
-      padding: 3px 4px; overflow-x: auto; overflow-y: hidden;
+      padding: 4px; overflow-x: auto; overflow-y: hidden;
       z-index: 200; background: var(--surface);
-      gap: 1px;
+      gap: 3px; justify-content: space-around;
     }
     .nav-btn {
-      flex-direction: column; gap: 1px; padding: 5px 8px;
-      font-size: 8.5px; white-space: nowrap; flex-shrink: 0;
-      justify-content: center; align-items: center; min-width: 48px;
+      flex-direction: column; gap: 0; padding: 0;
+      flex-shrink: 0; flex: 1;
+      justify-content: center; align-items: center;
+      width: 44px; height: 44px; min-width: 40px; max-width: 56px;
+      border-radius: 10px;
     }
-    .nav-icon { font-size: 19px; }
-    .nav-label { font-size: 8px; line-height: 1.1; }
+    .nav-icon { font-size: 22px; line-height: 1; }
+    .nav-label { display: none; }
     .nav-divider { display: none; }
 
     /* Main: padding-bottom para não ficar atrás da barra fixa */
-    main { padding: 10px; padding-bottom: 74px; overflow-y: auto; }
+    main { padding: 10px; padding-bottom: 68px; overflow-y: auto; }
 
     /* Formulários em coluna única */
     .form-row { grid-template-columns: 1fr !important; }

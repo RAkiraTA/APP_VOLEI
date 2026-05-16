@@ -1154,13 +1154,23 @@ function addJogador() {
   if (appData.jogadores.find(j => j.nome.toLowerCase() === nome.toLowerCase()))
     return toast('Jogador já cadastrado!', 'error');
 
-  appData.jogadores.push({ id: uid(), nome, posicao, nota: 0, ativo: true });
+  const novoJog = { id: uid(), nome, posicao, nota: 0, ativo: true };
+  appData.jogadores.push(novoJog);
+
+  // Adicionar automaticamente a todos os jogos não encerrados
+  appData.jogos.filter(j => !j.encerrado).forEach(jogo => {
+    if (!(novoJog.id in (jogo.presencas || {}))) jogo.presencas[novoJog.id] = false;
+    if (!jogo.presentes) jogo.presentes = {};
+    if (!(novoJog.id in jogo.presentes)) jogo.presentes[novoJog.id] = false;
+  });
+
   save();
   document.getElementById('jog-nome').value = '';
-  document.getElementById('jog-posicao').value = '';  // reset para "Não informado"
+  document.getElementById('jog-posicao').value = '';
   renderJogadores();
+  renderJogos();
   atualizarDatalist();
-  toast('Jogador cadastrado!');
+  toast('Jogador cadastrado e adicionado aos jogos ativos!');
 }
 
 function toggleAtivo(id) {
@@ -1344,28 +1354,40 @@ function addJogo() {
   const obs = document.getElementById('jogo-obs').value.trim();
   if (!dt || !comp) return toast('Informe data e competência!', 'error');
 
-  const presencas = {};
-  appData.jogadores.filter(j => j.ativo !== false).forEach(j => presencas[j.id] = false);
+  const presencas = {}, presentes = {};
+  appData.jogadores.filter(j => j.ativo !== false).forEach(j => {
+    presencas[j.id] = false;
+    presentes[j.id] = false;
+  });
 
-  appData.jogos.push({ id: uid(), data: dt, competencia: comp, obs, presencas });
+  const novoId = uid();
+  appData.jogos.push({ id: novoId, data: dt, competencia: comp, obs, presencas, presentes });
+  jogoExpandido = novoId; // auto-expandir o novo jogo
   save(); renderJogos(); renderSorteioSelect();
   toast('Jogo criado!');
 }
 
-function togglePresenca(jogoId, jogId) {
+function togglePresenca(jogoId, jogId) { // "Confirmado"
   const jogo = appData.jogos.find(j => j.id === jogoId);
   if (!jogo) return;
   const cfg = appData.config || {};
-  // Se está marcando como presente e há limite configurado, verificar
   if (!jogo.presencas[jogId] && cfg.bloquearPresenca && cfg.maxPresenca > 0) {
-    const presentes = Object.values(jogo.presencas).filter(Boolean).length;
-    if (presentes >= cfg.maxPresenca) {
-      toast(`Limite de ${cfg.maxPresenca} jogadores atingido!`, 'error');
+    const confirmados = Object.values(jogo.presencas).filter(Boolean).length;
+    if (confirmados >= cfg.maxPresenca) {
+      toast(`Limite de ${cfg.maxPresenca} confirmados atingido!`, 'error');
       return;
     }
   }
   jogo.presencas[jogId] = !jogo.presencas[jogId];
   save(); renderJogos();
+}
+
+function togglePresente(jogoId, jogId, valor) { // "Presente" (físico)
+  const jogo = appData.jogos.find(j => j.id === jogoId);
+  if (!jogo) return;
+  if (!jogo.presentes) jogo.presentes = {};
+  jogo.presentes[jogId] = valor;
+  save(); renderJogos(); renderResumo();
 }
 
 function toggleTodos(jogoId, marcarTodos) {
@@ -1424,6 +1446,12 @@ function confirmarEncerrar(id) {
       jogo.jogoCount = { ...(currentDraw.jogoCount || {}) };
       jogo.winsCount = { ...(currentDraw.winsCount || {}) };
     }
+    // Ausências: confirmado (presencas=true) mas não presente fisicamente
+    const ausencias = {};
+    Object.keys(jogo.presencas || {}).forEach(id => {
+      if (jogo.presencas[id] && !(jogo.presentes || {})[id]) ausencias[id] = true;
+    });
+    jogo.ausencias = ausencias;
     save();
     jogoParaEncerrar = null;
     jogoExpandido = null;
@@ -1444,27 +1472,28 @@ function renderJogos() {
   }
 
   list.innerHTML = ativos.map(jogo => {
-    // Considerar apenas jogadores ativos que estão no jogo
     const jogadoresDoJogo = [...appData.jogadores]
       .filter(j => j.ativo !== false && j.id in jogo.presencas)
       .sort((a, b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 
-    const presentes = jogadoresDoJogo.filter(j => jogo.presencas[j.id]).length;
+    const confirmados = jogadoresDoJogo.filter(j => jogo.presencas[j.id]).length;
+    const presentesFis = jogadoresDoJogo.filter(j => (jogo.presentes||{})[j.id]).length;
     const total     = jogadoresDoJogo.length;
     const cfg       = appData.config || {};
     const temLimite = cfg.bloquearPresenca && cfg.maxPresenca > 0;
-    const limiteAtingido = temLimite && presentes >= cfg.maxPresenca;
+    const limiteAtingido = temLimite && confirmados >= cfg.maxPresenca;
     const expanded  = jogoExpandido === jogo.id;
     const confirmando = jogoParaEncerrar === jogo.id;
 
     const badgePresenca = temLimite
-      ? `<span class="badge ${limiteAtingido ? 'badge-red' : 'badge-yellow'}">${presentes}/${cfg.maxPresenca} (limite)</span>`
-      : `<span class="badge badge-yellow">${presentes}/${total} presentes</span>`;
+      ? `<span class="badge ${limiteAtingido ? 'badge-red' : 'badge-yellow'}">${confirmados}/${cfg.maxPresenca} conf.</span>`
+      : `<span class="badge badge-yellow">${confirmados} conf.</span>`;
+    const badgePres = `<span class="badge badge-green">${presentesFis} pres.</span>`;
 
     const jogadoresHtml = jogadoresDoJogo.length ? `
       <div class="select-all-bar">
         <span class="select-all-label">
-          ${temLimite ? `Limite: ${presentes}/${cfg.maxPresenca}` : 'Selecionar todos'}
+          ${temLimite ? `Limite: ${confirmados}/${cfg.maxPresenca}` : 'Selecionar todos'}
         </span>
         <div style="display:flex;gap:8px">
           <button class="btn btn-success btn-sm" onclick="event.stopPropagation();toggleTodos('${jogo.id}',true)"
@@ -1473,22 +1502,29 @@ function renderJogos() {
         </div>
       </div>
       ${jogadoresDoJogo.map(j => {
-        const presente = jogo.presencas[j.id];
-        const cfg = appData.config || {};
-        const limiteAtingido = cfg.bloquearPresenca && cfg.maxPresenca > 0 && presentes >= cfg.maxPresenca;
-        const desabilitar = !presente && limiteAtingido;
+        const confirmado = jogo.presencas[j.id];
+        const presente   = (jogo.presentes||{})[j.id];
+        const desabilitar = !confirmado && limiteAtingido;
         return `
-          <div class="list-item" style="padding:10px 12px${desabilitar ? ';opacity:0.45' : ''}">
-            <div class="player-avatar" style="width:32px;height:32px;font-size:11px">${avatarInicial(j.nome)}</div>
+          <div class="list-item" style="padding:8px 12px${desabilitar?';opacity:0.45':''}">
+            <div class="player-avatar" style="width:30px;height:30px;font-size:11px">${avatarInicial(j.nome)}</div>
             <div class="list-item-info">
-              <div style="font-size:14px;font-weight:700">${j.nome}</div>
-              <div style="font-size:11px;color:var(--muted)">${j.posicao || '—'}</div>
+              <div style="font-size:13px;font-weight:700">${j.nome}</div>
+              <div style="font-size:11px;color:var(--muted)">${j.posicao||'—'}</div>
             </div>
-            <span class="badge ${presente ? 'badge-green' : 'badge-red'}" style="font-size:10px">${presente ? '✓ Presente' : '✗ Ausente'}</span>
-            <button class="presence-toggle ${presente ? 'present' : 'absent'}"
-              onclick="${desabilitar ? '' : `event.stopPropagation();togglePresenca('${jogo.id}','${j.id}')`}"
-              ${desabilitar ? 'disabled title="Limite de presença atingido"' : ''}
-              style="${desabilitar ? 'cursor:not-allowed;opacity:0.4' : ''}"></button>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+              <span style="font-size:9px;color:var(--muted);font-weight:700">CONF.</span>
+              <button class="presence-toggle ${confirmado?'present':'absent'}"
+                onclick="${desabilitar?'':` event.stopPropagation();togglePresenca('${jogo.id}','${j.id}')`}"
+                ${desabilitar?'disabled title="Limite atingido"':''}
+                style="${desabilitar?'cursor:not-allowed;opacity:0.4':''}"></button>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:center;gap:2px">
+              <span style="font-size:9px;color:var(--muted);font-weight:700">PRES.</span>
+              <input type="checkbox" ${presente?'checked':''} 
+                onchange="event.stopPropagation();togglePresente('${jogo.id}','${j.id}',this.checked)"
+                style="width:22px;height:22px;cursor:pointer;accent-color:var(--accent3);margin:0">
+            </div>
           </div>
         `;
       }).join('')}
@@ -1505,6 +1541,7 @@ function renderJogos() {
       </div>
     ` : `
       ${badgePresenca}
+      ${badgePres}
       <button class="btn btn-success btn-sm" onclick="event.stopPropagation();solicitarEncerrar('${jogo.id}')" title="Encerrar Jogo">🏁</button>
       <button class="btn btn-danger btn-sm" onclick="event.stopPropagation();solicitarDelete('jogo','${jogo.id}','Excluir o jogo de ${formatDate(jogo.data)}? Esta ação não pode ser desfeita.')">🗑</button>
       <span style="color:var(--muted);font-size:18px">${expanded ? '▲' : '▼'}</span>
@@ -1534,6 +1571,12 @@ function renderSorteioSelect() {
   const sorted = [...appData.jogos].filter(j => !j.encerrado).sort((a,b) => b.data.localeCompare(a.data));
   sel.innerHTML = `<option value="">— Selecionar Jogo —</option>` +
     sorted.map(j => `<option value="${j.id}">${formatDate(j.data)} — ${formatMes(j.competencia)}</option>`).join('');
+
+  // Pré-selecionar o jogo do dia ou o mais próximo
+  const hoje = new Date().toISOString().split('T')[0];
+  const ativos = [...appData.jogos].filter(j => !j.encerrado).sort((a,b) => a.data.localeCompare(b.data));
+  const nearest = ativos.find(j => j.data >= hoje) || ativos[ativos.length - 1];
+  if (nearest) sel.value = nearest.id;
 }
 
 // Retira N jogadores de um pool pelo critério
@@ -1566,13 +1609,23 @@ function sortear() {
   const qtd = parseInt(document.getElementById('sort-qtd').value);
   const criterio = document.getElementById('sort-criterio').value;
 
+  // Verificar se há jogos criados
+  const jogosAtivos = appData.jogos.filter(j => !j.encerrado);
+  if (jogosAtivos.length === 0) {
+    return toast('Nenhum jogo criado. Crie um jogo primeiro na aba Jogos!', 'error');
+  }
+
   let presentes;
   if (jogoId) {
     const jogo = appData.jogos.find(j => j.id === jogoId);
     if (!jogo) return toast('Jogo não encontrado!', 'error');
-    presentes = appData.jogadores.filter(j => jogo.presencas[j.id]);
+    // Usar PRESENTES FÍSICOS (checkbox), não confirmados
+    presentes = appData.jogadores.filter(j => (jogo.presentes || {})[j.id]);
+    if (presentes.length === 0) {
+      return toast('Nenhum jogador marcado como Presente no jogo. Marque os presentes na aba Jogos!', 'error');
+    }
   } else {
-    presentes = [...appData.jogadores];
+    presentes = appData.jogadores.filter(j => j.ativo !== false);
   }
 
   if (presentes.length < qtd * 2) {
@@ -1596,14 +1649,15 @@ function sortear() {
     bancoInicial = embaralhados.slice(qtd * 2);
   }
 
-  // Já sorteia o próximo reserva do banco inicial
   const { reserva, nextBanco, reservaCompleta } = buildReserva(bancoInicial, qtd, criterio);
 
   const jogoCount = {}, winsCount = {};
   presentes.forEach(j => { jogoCount[j.id] = 0; winsCount[j.id] = 0; });
 
   pendingWinner = null;
-  currentDraw = { t1, t2, reserva, reservaCompleta, nextBanco, qtd, criterio, total: presentes.length, pausados: [], jogoCount, winsCount,
+  currentDraw = { t1, t2, reserva, reservaCompleta, nextBanco, qtd, criterio,
+    criterioRotacao: criterio, // tipo de sorteio para as rodadas seguintes
+    total: presentes.length, pausados: [], jogoCount, winsCount,
     jogoId: jogoId || null,
     jogoRef: jogoId ? appData.jogos.find(j => j.id === jogoId) : null
   };
@@ -1649,7 +1703,8 @@ function confirmarGanhador() {
     currentDraw.winsCount[j.id] = (currentDraw.winsCount[j.id] || 0) + 1;
   });
 
-  const { t1, t2, reserva, reservaCompleta, nextBanco, qtd, criterio, total } = currentDraw;
+  const { t1, t2, reserva, reservaCompleta, nextBanco, qtd, criterio, criterioRotacao, total } = currentDraw;
+  const cRot = criterioRotacao || criterio; // tipo para esta e próximas rodadas
   const timeSaindo = timeSai === 'A' ? [...t1] : [...t2];
   const timeFica   = timeSai === 'A' ? [...t2] : [...t1];
 
@@ -1660,25 +1715,23 @@ function confirmarGanhador() {
     restantePerdedor = [...timeSaindo];
   } else {
     const needed = qtd - reserva.length;
-    const { drawn, remaining } = drawN(timeSaindo, needed, criterio);
+    const { drawn, remaining } = drawN(timeSaindo, needed, cRot);
     reservaFinal = [...reserva, ...drawn];
     restantePerdedor = remaining;
   }
 
-  // Novo jogo: timeFica vs reservaFinal
   const novoT1 = timeSai === 'A' ? reservaFinal : timeFica;
   const novoT2 = timeSai === 'A' ? timeFica : reservaFinal;
 
-  // Próximo reserva: fila de espera tem prioridade
   let novaReserva, novaFila;
   if (nextBanco.length >= qtd) {
-    const { drawn: r, remaining: sobranFila } = drawN(nextBanco, qtd, criterio);
+    const { drawn: r, remaining: sobranFila } = drawN(nextBanco, qtd, cRot);
     novaReserva = r;
     novaFila = [...sobranFila, ...restantePerdedor];
   } else {
     const fromFila = [...nextBanco];
     const needed2 = qtd - fromFila.length;
-    const { drawn: fromPerd, remaining: sobranPerd } = drawN(restantePerdedor, needed2, criterio);
+    const { drawn: fromPerd, remaining: sobranPerd } = drawN(restantePerdedor, needed2, cRot);
     novaReserva = [...fromFila, ...fromPerd];
     novaFila = sobranPerd;
   }
@@ -1686,13 +1739,11 @@ function confirmarGanhador() {
   const novaReservaCompleta = novaReserva.length >= qtd;
 
   pendingWinner = null;
-  currentDraw = {
-    t1: novoT1, t2: novoT2,
-    reserva: novaReserva, reservaCompleta: novaReservaCompleta,
-    nextBanco: novaFila, qtd, criterio, total,
+  currentDraw = { t1: novoT1, t2: novoT2, reserva: novaReserva, reservaCompleta: novaReservaCompleta,
+    nextBanco: novaFila, qtd, criterio, criterioRotacao: cRot, total,
     pausados: currentDraw.pausados || [],
-    jogoCount: currentDraw.jogoCount,
-    winsCount: currentDraw.winsCount
+    jogoCount: currentDraw.jogoCount, winsCount: currentDraw.winsCount,
+    jogoId: currentDraw.jogoId, jogoRef: currentDraw.jogoRef
   };
   renderTimes(`Time ${timeGanhou} 🏆 venceu!`);
 
@@ -1717,7 +1768,7 @@ function atualizarSorteio() {
   if (jogoId) {
     const jogo = appData.jogos.find(j => j.id === jogoId);
     if (!jogo) { toast('Jogo de referência não encontrado.', 'error'); return; }
-    presentePlayers = appData.jogadores.filter(j => j.ativo !== false && jogo.presencas[j.id]);
+    presentePlayers = appData.jogadores.filter(j => j.ativo !== false && (jogo.presentes || {})[j.id]);
   } else {
     presentePlayers = appData.jogadores.filter(j => j.ativo !== false);
   }
@@ -1746,6 +1797,12 @@ function atualizarSorteio() {
     toast(`${novos.length} novo(s) jogador(es) adicionado(s) à Fila de Espera.`, 'success');
   }
 
+  renderTimes();
+}
+
+function setCriterioRotacao(c) {
+  if (!currentDraw) return;
+  currentDraw.criterioRotacao = c;
   renderTimes();
 }
 
@@ -1869,6 +1926,19 @@ function renderTimes(timeSaiuLabel) {
       </div>`;
   }
 
+  // Tipo de sorteio para as rodadas seguintes
+  const crRot = currentDraw.criterioRotacao || 'aleatorio';
+  const tipoSorteioHtml = `
+    <div style="margin-top:10px;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:10px">
+      <div style="font-size:11px;color:var(--muted);font-weight:700;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">🔀 Tipo de Sorteio (próximas rodadas)</div>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-full ${crRot === 'aleatorio' ? 'btn-primary' : 'btn-ghost'}"
+          onclick="setCriterioRotacao('aleatorio')" style="font-size:13px">🎲 Aleatório</button>
+        <button class="btn btn-full ${crRot === 'equilibrado' ? 'btn-success' : 'btn-ghost'}"
+          onclick="setCriterioRotacao('equilibrado')" style="font-size:13px">⚖️ Equilibrado</button>
+      </div>
+    </div>`;
+
   res.innerHTML = `
     <div class="card">
       <div class="flex-between" style="margin-bottom:8px">
@@ -1890,6 +1960,7 @@ function renderTimes(timeSaiuLabel) {
       </div>
       ${filaHtml}
       ${pausadosHtml}
+      ${tipoSorteioHtml}
       <div id="perdeu-section" style="margin-top:14px"></div>
       <hr class="divider">
       <button class="btn btn-ghost btn-full" onclick="atualizarSorteio()" style="margin-top:4px">
@@ -2362,6 +2433,9 @@ function renderResumo() {
   const confirmados = jogadoresNoJogo
     .filter(j => proximo?.presencas?.[j.id])
     .sort((a,b) => a.nome.localeCompare(b.nome, 'pt-BR'));
+  const presentesFisicos = jogadoresNoJogo
+    .filter(j => (proximo?.presentes||{})[j.id])
+    .sort((a,b) => a.nome.localeCompare(b.nome, 'pt-BR'));
 
   // Pagamentos pendentes, ordem alfabética
   const pendentes = appData.financeiro
@@ -2384,6 +2458,9 @@ function renderResumo() {
           style="cursor:pointer;font-size:13px;padding:6px 14px;user-select:none"
           title="${resumoConfirmadosAberto ? 'Fechar lista' : 'Ver confirmados'}">
           ${confirmados.length} confirmado${confirmados.length !== 1 ? 's' : ''} ${resumoConfirmadosAberto ? '▲' : '▼'}
+        </span>
+        <span class="badge badge-green" style="font-size:13px;padding:6px 14px;margin-left:6px">
+          ${presentesFisicos.length} presente${presentesFisicos.length !== 1 ? 's' : ''}
         </span>
         ${resumoConfirmadosAberto ? `
           <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px">
